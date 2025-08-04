@@ -1,0 +1,232 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  email            String            @unique
+  AdminName        String?
+  role             Role              @default(USER)
+  status           Status            @default(PENDING)
+  password         String
+  fcmToken         String?
+  profileRole      ProfileRole?
+  AthleteInfo      AthleteInfo?      @relation(fields: [athleteInfoId], references: [id])
+  ClubInfo         ClubInfo?         @relation(fields: [clubInfoId], references: [id])
+  BrandInfo        BrandInfo?        @relation(fields: [brandInfoId], references: [id])
+  customerId       String?
+  connectAccountId String?
+  subscriptionPlan SubscriptionPlan?
+  isVerified       Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  receiver         Notifications[]   @relation("receiverDetails")
+  sender           Notifications[]   @relation("senderDetails")
+  Review           Review[]
+  SubscriptionUser SubscriptionUser?
+  athleteInfoId    String?           @db.ObjectId
+  clubInfoId       String?           @db.ObjectId
+  brandInfoId      String?           @db.ObjectId
+}
+
+model AthleteInfo {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @unique @db.ObjectId
+  fullName         String?
+  profileImage     String?
+  sportName        String?
+  bio              String?
+  clubName         String?
+  position         String?
+  country          String?
+  city             String?
+  passportOrNidImg String?
+  selfieImage      String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  User             User[]
+}
+
+model ClubInfo {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String   @unique @db.ObjectId
+  clubName         String?
+  bio              String?
+  country          String?
+  city             String?
+  logoImage        String?
+  members          Int?
+  foundedYear      DateTime?
+  licenseImage     String?
+  certificateImage String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  User             User[]
+}
+
+model BrandInfo {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique @db.ObjectId
+  brandName String?
+  country   String?
+  city      String?
+  logoImage String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  User      User[]
+}
+
+enum ProfileRole {
+  CLUB
+  BRAND
+  ATHLETE
+}
+
+model Otp {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  email     String    @unique
+  otp       Int
+  expiry    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("otps")
+}
+
+model Service {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  price       Float
+  image       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Review      Review[]
+  Booking     Booking[]
+}
+
+model Booking {
+  id             String      @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String
+  serviceId      String      @db.ObjectId
+  date           DateTime
+  description    String
+  location       String
+  latitude       Float?
+  longitude      Float?
+  isPaid         Boolean     @default(false)
+  paymentId      String?     @db.ObjectId
+  serviceDetails Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  paymentDetails Payment?    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  status         OrderStatus @default(PENDING)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  // Payment        Payment[]
+}
+
+model Review {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @db.ObjectId
+  serviceId      String   @db.ObjectId
+  rating         Float
+  comment        String?
+  serviceDetails Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  userDetails    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Payment {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String    @unique @db.ObjectId
+  amount        Float
+  paymentId     String?
+  paymentMethod String?
+  serviceId     String    @unique @db.ObjectId
+  // bookDetails Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  Booking       Booking[]
+}
+
+model Subscription {
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  name             String
+  stripeProductId  String
+  stripePriceId    String
+  price            Float
+  description      String
+  currency         String
+  interval         String?
+  status           Status            @default(ACTIVE)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  SubscriptionUser SubscriptionUser?
+}
+
+model SubscriptionUser {
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String       @unique @db.ObjectId
+  subscriptionPlanId String       @unique @db.ObjectId // E.g., "basic", "premium", etc.
+  subscriptionId     String // Stripe subscription ID
+  subscriptionStatus String // E.g., "active", "canceled", "incomplete"
+  subscriptionStart  DateTime // When the subscription started
+  subscriptionEnd    DateTime // When it ends (for trial or cancel)
+  userDetails        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionPlan   Subscription @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Notifications {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  receiverId String   @db.ObjectId
+  senderId   String?  @db.ObjectId
+  title      String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  receiver   User     @relation("receiverDetails", fields: [receiverId], references: [id])
+  sender     User?    @relation("senderDetails", fields: [senderId], references: [id])
+}
+
+enum Role {
+  USER
+  WORKER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum Status {
+  PENDING
+  ACTIVE
+  BLOCKED
+}
+
+enum SubscriptionPlan {
+  BASIC
+  PRO
+  EXPIRED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+}
