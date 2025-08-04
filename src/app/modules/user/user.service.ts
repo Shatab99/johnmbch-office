@@ -88,17 +88,11 @@ const changePasswordIntoDB = async (id: string, payload: any) => {
 // user updates base on user profileRole
 
 const updateAtheleteProfile = async (id: string, body: any, image: any) => {
-  const profileImage = image?.profileImage?.[0]
-    ? await getImageUrl(image.profileImage[0])
-    : undefined;
+  const profileImage = image.profileImage;
 
-  const passportOrNidImg = image?.passportOrNidImg?.[0]
-    ? await getImageUrl(image.passportOrNidImg[0])
-    : undefined;
+  const passportOrNidImg = image.passportOrNidImg;
 
-  const selfieImage = image?.selfieImg?.[0]
-    ? await getImageUrl(image.selfieImg[0])
-    : undefined;
+  const selfieImage = image.selfieImg
 
   const { profileRole, ...data } = body;
 
@@ -124,7 +118,9 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
 };
 
 const updateClubProfile = async (id: string, body: any, image: any) => {
-  const logoImage = image ? getImageUrl(image) : undefined;
+  const logoImage = image.logoImage
+  const licenseImage = image.licenseImage
+  const certificateImage = image.certificateImage
   const { profileRole, ...data } = body;
   const findUser = await prisma.user.findUnique({
     where: {
@@ -145,6 +141,8 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
     data: {
       ...data,
       logoImage: logoImage ?? undefined,
+      licenseImage: licenseImage ?? undefined,
+      certificateImage: certificateImage ?? undefined
     },
   });
 
@@ -152,7 +150,7 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
 };
 
 const updateBrandProfile = async (id: string, body: any, image: any) => {
-  const logoImage = image ? getImageUrl(image) : undefined;
+  const logoImage = image.logoImage;
   const { profileRole, ...data } = body;
   const findUser = await prisma.user.findUnique({
     where: {
