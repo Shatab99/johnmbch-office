@@ -80,6 +80,17 @@ const updateUserController = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendCodeBeforeUpdate = catchAsync(async (req: Request, res: Response) => {
+  const { email, id } = req.user;
+  const result = await userServices.sendCodeBeforeUpdate(id, email);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Verification code sent successfully",
+    data: result,
+    success: true,
+  });
+});
+
 const getMyProfileController = catchAsync(
   async (req: Request, res: Response) => {
     const { id } = req.user;
@@ -98,4 +109,5 @@ export const userController = {
   updateUserController,
   changePasswordController,
   getMyProfileController,
+  sendCodeBeforeUpdate,
 };

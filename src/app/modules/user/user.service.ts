@@ -92,9 +92,9 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
 
   const passportOrNidImg = image.passportOrNidImg;
 
-  const selfieImage = image.selfieImg
+  const selfieImage = image.selfieImg;
 
-  const { profileRole, ...data } = body;
+  const { profileRole, otp, ...data } = body;
 
   const findUser = await prisma.user.findUnique({ where: { id } });
   if (!findUser) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
@@ -118,10 +118,10 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
 };
 
 const updateClubProfile = async (id: string, body: any, image: any) => {
-  const logoImage = image.logoImage
-  const licenseImage = image.licenseImage
-  const certificateImage = image.certificateImage
-  const { profileRole, ...data } = body;
+  const logoImage = image.logoImage;
+  const licenseImage = image.licenseImage;
+  const certificateImage = image.certificateImage;
+  const { profileRole, otp, ...data } = body;
   const findUser = await prisma.user.findUnique({
     where: {
       id,
@@ -142,7 +142,7 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
       ...data,
       logoImage: logoImage ?? undefined,
       licenseImage: licenseImage ?? undefined,
-      certificateImage: certificateImage ?? undefined
+      certificateImage: certificateImage ?? undefined,
     },
   });
 
@@ -151,7 +151,7 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
 
 const updateBrandProfile = async (id: string, body: any, image: any) => {
   const logoImage = image.logoImage;
-  const { profileRole, ...data } = body;
+  const { profileRole, otp, ...data } = body;
   const findUser = await prisma.user.findUnique({
     where: {
       id,
@@ -187,6 +187,16 @@ const updateUserIntoDB = async (id: string, body: any, image: any) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
 
+  // match the qr code
+
+  const { message } = await OTPVerify({
+    otp: body.otp,
+    email: findUser.email,
+    time: "24h",
+  });
+
+  if (!message) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP code");
+
   if (body.profileRole === "ATHLETE") {
     return updateAtheleteProfile(id, body, image);
   } else if (body.profileRole === "CLUB") {
@@ -214,9 +224,26 @@ const getMyProfile = async (id: string) => {
   return result;
 };
 
+const sendCodeBeforeUpdate = async (id: string, email: string) => {
+  const findUser = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+  });
+  if (!findUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  if (findUser.email !== email) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Email does not match");
+  }
+  await OTPFn(email);
+  return "otp sent successfully";
+};
+
 export const userServices = {
   createUserIntoDB,
   changePasswordIntoDB,
   getMyProfile,
+  sendCodeBeforeUpdate,
   updateUserIntoDB,
 };

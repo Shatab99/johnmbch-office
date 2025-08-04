@@ -31,4 +31,10 @@ route.put(
 );
 route.get("/me", auth(), userController.getMyProfileController);
 
+route.post(
+  "/send-code-before-update",
+  auth(Role.USER || Role.ADMIN),
+  userController.sendCodeBeforeUpdate
+);
+
 export const userRoutes = route;
