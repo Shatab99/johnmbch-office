@@ -186,13 +186,13 @@ const updateUserIntoDB = async (id: string, body: any, image: any) => {
 
   // match the qr code
 
-  const { message } = await OTPVerify({
-    otp: body.otp,
-    email: findUser.email,
-    time: "24h",
-  });
+  // const { message } = await OTPVerify({
+  //   otp: body.otp,
+  //   email: findUser.email,
+  //   time: "24h",
+  // });
 
-  if (!message) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP code");
+  // if (!message) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP code");
 
   if (body.profileRole === "ATHLETE") {
     return updateAtheleteProfile(id, body, image);

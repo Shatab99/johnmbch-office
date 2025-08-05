@@ -66,11 +66,67 @@ const createPostInDb = async (postData: any, files: any) => {
 };
 
 export const getAllPostsFromDb = async (query: any) => {
-  return await dynamicQueryBuilder({
+  const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query,
-    searchableFields: ["content", "title"], // add searchable fields here
+    searchableFields: ["content", "title"],
+    includes: {
+      AthleteInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+          sportName: true,
+        },
+      },
+      ClubInfo: {
+        select: {
+          id: true,
+          clubName: true,
+          logoImage: true,
+          sportName: true,
+        },
+      },
+      userDetails: {
+        select: {
+          profileRole: true,
+        },
+      },
+    },
   });
+
+  const result = posts.data.map((post: any) => {
+    const {
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      athleteInfoId,
+      clubInfoId,
+      ...restData
+    } = post;
+
+    const profileData =
+      userDetails.profileRole === "ATHLETE"
+        ? {
+            profileId: AthleteInfo?.id,
+            fullName: AthleteInfo?.fullName,
+            profileImage: AthleteInfo?.profileImage,
+            sportName: AthleteInfo?.sportName,
+          }
+        : {
+            profileId: ClubInfo?.id,
+            clubName: ClubInfo?.clubName,
+            logoImage: ClubInfo?.logoImage,
+            sportName: ClubInfo?.sportName,
+          };
+
+    return {
+      postData: restData,
+      profileInfo: profileData,
+    };
+  });
+
+  return result;
 };
 
 // get profile details
@@ -82,15 +138,16 @@ const getProfileDetailsFromDb = async (profileId: string, userId: string) => {
     include: {
       AthleteInfo: true,
       ClubInfo: true,
+      userDetails: true,
     },
   });
 
   if (!posts) throw new ApiError(StatusCodes.NOT_FOUND, "Profile not found");
 
-  const { AthleteInfo, ClubInfo, ...restData } = posts;
+  const { AthleteInfo, ClubInfo, userDetails, ...restData } = posts;
 
   const user = await prisma.user.findUnique({
-    where: { id: posts?.AthleteInfo?.userId || posts?.ClubInfo?.userId },
+    where: { id: posts.userDetails.id },
   });
 
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
@@ -169,7 +226,6 @@ const getMyPosts = async (userId: string) => {
 
   return result;
 };
-
 
 export const postService = {
   createPostInDb,

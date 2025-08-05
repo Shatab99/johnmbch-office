@@ -32,6 +32,7 @@ const updateClubProfileValidation = z.object({
   bio: z.string(),
   country: z.string(),
   city: z.string(),
+  sportName: z.string(), 
   members: z.number().min(0, "Members must be a positive number"),
   foundedYear: z.string().min(4, "Founded year is required"),
   otp: z.string(),
