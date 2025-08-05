@@ -50,16 +50,19 @@ const updateUserController = catchAsync(async (req: Request, res: Response) => {
       profileImage: files.profileImage?.[0]?.location,
       passportOrNidImg: files.passportOrNidImg?.[0]?.location,
       selfieImg: files.selfieImg?.[0]?.location,
+      coverImage: files.coverImage?.[0]?.location,
     };
   } else if (role === "CLUB") {
     images = {
       logoImage: files.logoImage?.[0]?.location,
       licenseImage: files.licenseImage?.[0]?.location,
       certificateImage: files.certificateImage?.[0]?.location,
+      coverImage: files.coverImage?.[0]?.location,
     };
   } else if (role === "BRAND") {
     images = {
       logoImage: files.logoImage?.[0]?.location,
+      coverImage: files.coverImage?.[0]?.location,
     };
   } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid profile role");

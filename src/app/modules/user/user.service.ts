@@ -5,7 +5,6 @@ import { compare, hash } from "bcrypt";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { OTPFn } from "../../helper/OTPFn";
 import OTPVerify from "../../helper/OTPVerify";
-import { getImageUrl, getImageUrls } from "../../helper/uploadFile";
 import { prisma } from "../../../utils/prisma";
 import { jwtHelpers } from "../../helper/jwtHelper";
 
@@ -111,6 +110,7 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
       profileImage,
       passportOrNidImg,
       selfieImage,
+      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -143,6 +143,7 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
       logoImage: logoImage ?? undefined,
       licenseImage: licenseImage ?? undefined,
       certificateImage: certificateImage ?? undefined,
+      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -171,6 +172,7 @@ const updateBrandProfile = async (id: string, body: any, image: any) => {
     data: {
       ...data,
       logoImage: logoImage ?? undefined,
+      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -222,7 +224,7 @@ const getMyProfile = async (id: string) => {
   });
 
   return result;
-};
+}; 
 
 const sendCodeBeforeUpdate = async (id: string, email: string) => {
   const findUser = await prisma.user.findUnique({

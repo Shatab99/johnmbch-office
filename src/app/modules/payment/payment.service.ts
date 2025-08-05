@@ -187,7 +187,7 @@ const splitPaymentFromStripe = async (
     payment_method: payload.paymentMethodId,
     confirm: true,
     payment_method_types: ["card"], // 🔥 Important: to avoid auto-redirects or default behavior
-    application_fee_amount: Math.round(payload.amount * 0.05 * 100), // $7 in cents
+    application_fee_amount: Math.round(payload.amount * 0.1 * 100), // $7 in cents , 10% here
     transfer_data: {
       destination: finderUser?.connectAccountId as string,
     },

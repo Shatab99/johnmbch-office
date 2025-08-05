@@ -9,7 +9,7 @@ const createPaymentController = catchAsync(
     const payload = req.body as any;
     const { id: userId } = req.user;
 
-    const result = await paymentService.createIntentInStripe(payload, userId);
+    const result = await paymentService.splitPaymentFromStripe(payload, userId);
     sendResponse(res, {
       statusCode: StatusCodes.CREATED,
       message: "Payment created successfully",

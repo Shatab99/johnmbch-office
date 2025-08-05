@@ -25,7 +25,15 @@ const s3Storage = multerS3({
 });
 
 const imageFilter = (req: any, file: any, cb: any) => {
-  const allowedMimes = ["image/png", "image/jpeg", "image/jpg"];
+  const allowedMimes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "video/mp4",
+    "video/quicktime", // for .mov files
+    "video/x-msvideo", // for .avi files
+    "video/x-matroska", // for .mkv files
+  ];
 
   if (!allowedMimes.includes(file.mimetype)) {
     return cb(
@@ -42,23 +50,24 @@ const upload = multer({
   fileFilter: imageFilter, // Apply image filter
 });
 
-export const getImageUrl = async (file: Express.MulterS3.File) => {
-  let image = file?.location;
-  if (!image || !image.startsWith("http")) {
-    image = `https://${process.env.DO_SPACE_BUCKET}.nyc3.digitaloceanspaces.com/${file?.key}`;
+export const getFileUrl = async (file: Express.MulterS3.File) => {
+  let fileUrl = file?.location;
+  if (!fileUrl || !fileUrl.startsWith("http")) {
+    fileUrl = `https://${process.env.DO_SPACE_BUCKET}.nyc3.digitaloceanspaces.com/${file?.key}`;
   }
-  return image;
+  return fileUrl;
 };
 
-export const getImageUrls = async (files: Express.MulterS3.File[]) => {
+export const getFileUrls = async (files: Express.MulterS3.File[]) => {
   return files.map((file) => {
-    let image = file?.location;
-    if (!image || !image.startsWith("http")) {
-      image = `https://${process.env.DO_SPACE_BUCKET}.nyc3.digitaloceanspaces.com/${file?.key}`;
+    let fileUrl = file?.location;
+    if (!fileUrl || !fileUrl.startsWith("http")) {
+      fileUrl = `https://${process.env.DO_SPACE_BUCKET}.nyc3.digitaloceanspaces.com/${file?.key}`;
     }
-    return image;
+    return fileUrl;
   });
 };
+
 
 // Single image uploads
 const uploadUniversal = upload.fields([
@@ -66,8 +75,11 @@ const uploadUniversal = upload.fields([
   { name: "passportOrNidImg", maxCount: 1 },
   { name: "selfieImg", maxCount: 1 },
   { name: "logoImage", maxCount: 1 },
+  { name: "coverImage", maxCount: 1 },
   { name: "licenseImage", maxCount: 1 },
   { name: "certificateImage", maxCount: 1 },
+  { name: "image", maxCount: 1 }, // For single image upload
+  { name: "video", maxCount: 1 },// For single video upload
 ]);
 
 // Multiple image uploads

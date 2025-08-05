@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { userRoutes } from "../modules/user/user.routes"
 import { authRoutes } from "../modules/auth/auth.routes"
+import { postRoutes } from "../modules/post/post.route"
 // import { foodRoutes } from "../modules/foods/foods.Routes"
 // import { locationRoutes } from "../modules/location/location.Routes"
 
@@ -13,6 +14,10 @@ const routes = [
     {
         path: "/auth",
         component: authRoutes
+    },
+    {
+        path: "/post",
+        component: postRoutes
     },
 ]
 

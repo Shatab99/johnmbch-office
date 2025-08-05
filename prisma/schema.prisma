@@ -38,6 +38,7 @@ model User {
   athleteInfoId    String?           @db.ObjectId
   clubInfoId       String?           @db.ObjectId
   brandInfoId      String?           @db.ObjectId
+  Post             Post[]
 }
 
 model AthleteInfo {
@@ -45,6 +46,7 @@ model AthleteInfo {
   userId           String   @unique @db.ObjectId
   fullName         String?
   profileImage     String?
+  coverImage       String?
   sportName        String?
   bio              String?
   clubName         String?
@@ -59,19 +61,20 @@ model AthleteInfo {
 }
 
 model ClubInfo {
-  id               String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId           String   @unique @db.ObjectId
+  id               String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String    @unique @db.ObjectId
   clubName         String?
   bio              String?
   country          String?
   city             String?
   logoImage        String?
+  coverImage       String?
   members          Int?
   foundedYear      DateTime?
   licenseImage     String?
   certificateImage String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   User             User[]
 }
 
@@ -82,9 +85,23 @@ model BrandInfo {
   country   String?
   city      String?
   logoImage String?
+  coverImage String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User[]
+}
+
+model Post {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  content     String?
+  image       String?
+  video       String?
+  userDetails User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes       String[] @default([])
+  shares      String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum ProfileRole {
