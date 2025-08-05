@@ -50,19 +50,16 @@ const updateUserController = catchAsync(async (req: Request, res: Response) => {
       profileImage: files.profileImage?.[0]?.location,
       passportOrNidImg: files.passportOrNidImg?.[0]?.location,
       selfieImg: files.selfieImg?.[0]?.location,
-      coverImage: files.coverImage?.[0]?.location,
     };
   } else if (role === "CLUB") {
     images = {
       logoImage: files.logoImage?.[0]?.location,
       licenseImage: files.licenseImage?.[0]?.location,
       certificateImage: files.certificateImage?.[0]?.location,
-      coverImage: files.coverImage?.[0]?.location,
     };
   } else if (role === "BRAND") {
     images = {
       logoImage: files.logoImage?.[0]?.location,
-      coverImage: files.coverImage?.[0]?.location,
     };
   } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid profile role");
@@ -107,10 +104,34 @@ const getMyProfileController = catchAsync(
   }
 );
 
+const updateCoverImageController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.user;
+    const files = req.files as {
+      [fieldname: string]: Express.MulterS3.File[];
+    };
+
+    if (!files.coverImage || files.coverImage.length === 0) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Cover image is required");
+    }
+
+    const coverImageUrl = files.coverImage[0].location;
+
+    const result = await userServices.updateCoverImage(id, coverImageUrl);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      message: "Cover image updated successfully",
+      data: result,
+      success: true,
+    });
+  }
+);
+
 export const userController = {
   createUserController,
   updateUserController,
   changePasswordController,
   getMyProfileController,
   sendCodeBeforeUpdate,
+  updateCoverImageController,
 };

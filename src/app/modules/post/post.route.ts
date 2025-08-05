@@ -18,4 +18,13 @@ router.post(
   postController.createPost
 );
 
+router.get(
+  "/profile-details/:profile",
+  auth(Role.USER),
+  postController.getProfileDetails
+);
+router.get("/all-posts", auth(Role.USER), postController.getAllPosts);
+
+router.get("/my-posts", auth(Role.USER), postController.getMyPosts);
+
 export const postRoutes = router;

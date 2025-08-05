@@ -30,6 +30,7 @@ route.put(
   userController.updateUserController
 );
 route.get("/me", auth(), userController.getMyProfileController);
+route.put("/update-cover-image", auth(Role.USER), fileUploader.uploadUniversal, userController.updateCoverImageController);
 
 route.post(
   "/send-code-before-update",

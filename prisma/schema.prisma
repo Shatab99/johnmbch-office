@@ -19,6 +19,7 @@ model User {
   AdminName        String?
   role             Role              @default(USER)
   status           Status            @default(PENDING)
+  coverImage       String?
   password         String
   fcmToken         String?
   profileRole      ProfileRole?
@@ -46,7 +47,6 @@ model AthleteInfo {
   userId           String   @unique @db.ObjectId
   fullName         String?
   profileImage     String?
-  coverImage       String?
   sportName        String?
   bio              String?
   clubName         String?
@@ -58,6 +58,7 @@ model AthleteInfo {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   User             User[]
+  post             Post[]
 }
 
 model ClubInfo {
@@ -67,8 +68,8 @@ model ClubInfo {
   bio              String?
   country          String?
   city             String?
+  sportName        String?
   logoImage        String?
-  coverImage       String?
   members          Int?
   foundedYear      DateTime?
   licenseImage     String?
@@ -76,6 +77,7 @@ model ClubInfo {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   User             User[]
+  post             Post[]
 }
 
 model BrandInfo {
@@ -85,23 +87,26 @@ model BrandInfo {
   country   String?
   city      String?
   logoImage String?
-  coverImage String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User[]
 }
 
 model Post {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @db.ObjectId
-  content     String?
-  image       String?
-  video       String?
-  userDetails User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes       String[] @default([])
-  shares      String[] @default([])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String       @db.ObjectId
+  content       String?
+  image         String?
+  video         String?
+  userDetails   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes         String[]     @default([])
+  shares        String[]     @default([])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  AthleteInfo   AthleteInfo? @relation(fields: [athleteInfoId], references: [id])
+  athleteInfoId String?      @db.ObjectId
+  ClubInfo      ClubInfo?    @relation(fields: [clubInfoId], references: [id])
+  clubInfoId    String?      @db.ObjectId
 }
 
 enum ProfileRole {

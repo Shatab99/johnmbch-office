@@ -2,11 +2,9 @@ import { User } from "@prisma/client";
 import ApiError from "../../error/ApiErrors";
 import { StatusCodes } from "http-status-codes";
 import { compare, hash } from "bcrypt";
-import jwt, { JwtPayload } from "jsonwebtoken";
 import { OTPFn } from "../../helper/OTPFn";
 import OTPVerify from "../../helper/OTPVerify";
 import { prisma } from "../../../utils/prisma";
-import { jwtHelpers } from "../../helper/jwtHelper";
 
 const createUserIntoDB = async (payload: User) => {
   const findUser = await prisma.user.findUnique({
@@ -110,7 +108,6 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
       profileImage,
       passportOrNidImg,
       selfieImage,
-      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -143,7 +140,6 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
       logoImage: logoImage ?? undefined,
       licenseImage: licenseImage ?? undefined,
       certificateImage: certificateImage ?? undefined,
-      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -172,7 +168,6 @@ const updateBrandProfile = async (id: string, body: any, image: any) => {
     data: {
       ...data,
       logoImage: logoImage ?? undefined,
-      coverImage: image.coverImage ?? undefined,
     },
   });
 
@@ -218,13 +213,14 @@ const getMyProfile = async (id: string) => {
       id: true,
       email: true,
       role: true,
+      coverImage: true,
       createdAt: true,
       updatedAt: true,
     },
   });
 
   return result;
-}; 
+};
 
 const sendCodeBeforeUpdate = async (id: string, email: string) => {
   const findUser = await prisma.user.findUnique({
@@ -242,10 +238,33 @@ const sendCodeBeforeUpdate = async (id: string, email: string) => {
   return "otp sent successfully";
 };
 
+const updateCoverImage = async (userId: string, coverImageUrl: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    include: {
+      AthleteInfo: true,
+      ClubInfo: true,
+      BrandInfo: true,
+    },
+  });
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { coverImage: coverImageUrl },
+  });
+
+  return "Cover image updated successfully";
+};
+
 export const userServices = {
   createUserIntoDB,
   changePasswordIntoDB,
   getMyProfile,
   sendCodeBeforeUpdate,
   updateUserIntoDB,
+  updateCoverImage,
 };
