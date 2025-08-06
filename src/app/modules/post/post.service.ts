@@ -145,34 +145,51 @@ const getProfileDetailsFromDb = async (
   userId: string,
   query: any
 ) => {
-  const posts = await prisma.post.findMany({
-    where: {
+  const posts = await dynamicQueryBuilder({
+    model: prisma.post,
+    query,
+    searchableFields: [
+      "ClubInfo.clubName",
+      "ClubInfo.sportName",
+      "AthleteInfo.fullName",
+      "AthleteInfo.sportName",
+    ],
+    forcedFilters: {
       OR: [{ athleteInfoId: profileId }, { clubInfoId: profileId }],
     },
-    include: {
-      AthleteInfo: true,
-      ClubInfo: true,
-      userDetails: true,
+    includes: {
+      AthleteInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+          sportName: true,
+        },
+      },
+      ClubInfo: {
+        select: {
+          id: true,
+          clubName: true,
+          logoImage: true,
+          sportName: true,
+        },
+      },
+      userDetails: {
+        select: {
+          profileRole: true,
+        },
+      },
     },
   });
 
-  if (!posts) throw new ApiError(StatusCodes.NOT_FOUND, "Profile not found");
-
-  const filteredPosts = posts.map((post) => {
-    const {
-      athleteInfoId,
-      clubInfoId,
-      AthleteInfo,
-      ClubInfo,
-      userDetails,
-      ...restData
-    } = post;
-    return restData;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { AthleteInfo: true, ClubInfo: true },
   });
 
-  const user = posts.map((post) => post.userDetails)[0];
-  const athleteInfo = posts.map((post) => post.AthleteInfo)[0];
-  const clubInfo = posts.map((post) => post.ClubInfo)[0];
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  const athleteInfo = user.AthleteInfo;
+  const clubInfo = user.ClubInfo;
 
   const profile = {
     profileId: athleteInfo?.id || clubInfo?.id,
@@ -184,7 +201,19 @@ const getProfileDetailsFromDb = async (
     isOwner: userId === athleteInfo?.userId || userId === clubInfo?.userId,
   };
 
-  return { profile, posts: filteredPosts };
+  const result = posts.data.map((post: any) => {
+    const {
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      athleteInfoId,
+      clubInfoId,
+      ...restData
+    } = post;
+    return restData;
+  });
+
+  return { profile, metaData: posts.meta, posts: result };
 };
 
 // const getMyPosts
@@ -213,7 +242,7 @@ const getMyPosts = async (userId: string, query: any) => {
       },
       userDetails: {
         select: {
-          profileRole: true
+          profileRole: true,
         },
       },
     },
@@ -252,8 +281,7 @@ const getMyPosts = async (userId: string, query: any) => {
     profileImage: user?.AthleteInfo?.profileImage || user?.ClubInfo?.logoImage,
     sportName: user?.AthleteInfo?.sportName || user?.ClubInfo?.sportName,
     coverImage: user?.coverImage,
-    isOwner:
-      userId === athleteInfo?.userId || userId === clubInfo?.userId,
+    isOwner: userId === athleteInfo?.userId || userId === clubInfo?.userId,
   };
 
   return { profile, metadata: posts.meta, posts: result };
