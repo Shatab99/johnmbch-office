@@ -35,7 +35,11 @@ const getAllPosts = catchAsync(async (req: Request, res: Response) => {
 const getProfileDetails = catchAsync(async (req: Request, res: Response) => {
   const { profile } = req.params;
   const { id } = req.user;
-  const result = await postService.getProfileDetailsFromDb(profile, id);
+  const result = await postService.getProfileDetailsFromDb(
+    profile,
+    id,
+    req.query
+  );
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     message: "Profile details retrieved successfully",
@@ -46,7 +50,7 @@ const getProfileDetails = catchAsync(async (req: Request, res: Response) => {
 
 const getMyPosts = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.user;
-  const result = await postService.getMyPosts(id);
+  const result = await postService.getMyPosts(id, req.query);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     message: "My posts retrieved successfully",

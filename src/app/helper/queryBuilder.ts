@@ -1,3 +1,5 @@
+import { equal } from "assert";
+
 interface QueryOptions {
   model: any;
   query: any;
@@ -29,20 +31,40 @@ export const dynamicQueryBuilder = async ({
   const searchCondition =
     search && searchableFields.length > 0
       ? {
-          OR: searchableFields.map((field) => ({
-            [field]: { contains: search, mode: "insensitive" },
-          })),
+          OR: searchableFields.map((field) => {
+            const keys = field.split(".");
+            const value = {
+              contains: search,
+              mode: "insensitive",
+            };
+
+            // @ts-ignore
+            return keys.reduceRight((acc, key) => ({ [key]: acc }), value);
+          }),
         }
       : {};
 
+  const { sportName, ...restFilters } = filters;
+
+  const relationFilter: any[] = [];
+
+  if (sportName)
+    relationFilter.push(
+      {
+        AthleteInfo: { sportName: { equals: sportName, mode: "insensitive" } },
+      },
+      { ClubInfo: { sportName: { equals: sportName, mode: "insensitive" } } }
+    );
+
   const filterConditions = {
-    ...filters,
+    ...restFilters,
     ...forcedFilters, // ✅ override or enforce protected filters like userId
   };
 
   const where = {
     ...searchCondition,
     ...filterConditions,
+    ...(relationFilter.length > 0 ? { OR: relationFilter } : {}),
   };
 
   const [data, total] = await Promise.all([
@@ -61,12 +83,13 @@ export const dynamicQueryBuilder = async ({
   const totalPages = Math.ceil(total / numericLimit);
 
   return {
-    data,
+    query: sportName,
     meta: {
       currentPage: numericPage,
       totalPages,
       totalItems: total,
       perPage: numericLimit,
     },
+    data,
   };
 };

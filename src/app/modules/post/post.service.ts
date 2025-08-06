@@ -13,6 +13,11 @@ const createPostInDb = async (postData: any, files: any) => {
   const user = await prisma.user.findUnique({ where: { id: postData.userId } });
 
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  if (!user.profileRole)
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Please update your profile first !"
+    );
 
   if (user.profileRole === "ATHLETE") {
     const athleteInfo = await prisma.athleteInfo.findUnique({
@@ -65,11 +70,16 @@ const createPostInDb = async (postData: any, files: any) => {
   return "Success";
 };
 
-export const getAllPostsFromDb = async (query: any) => {
+const getAllPostsFromDb = async (query: any) => {
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query,
-    searchableFields: ["content", "title"],
+    searchableFields: [
+      "ClubInfo.clubName",
+      "ClubInfo.sportName",
+      "AthleteInfo.fullName",
+      "AthleteInfo.sportName",
+    ],
     includes: {
       AthleteInfo: {
         select: {
@@ -126,12 +136,16 @@ export const getAllPostsFromDb = async (query: any) => {
     };
   });
 
-  return result;
+  return { metadata: posts.meta, result };
 };
 
-// get profile details
-const getProfileDetailsFromDb = async (profileId: string, userId: string) => {
-  const posts = await prisma.post.findFirst({
+// get profile details and
+const getProfileDetailsFromDb = async (
+  profileId: string,
+  userId: string,
+  query: any
+) => {
+  const posts = await prisma.post.findMany({
     where: {
       OR: [{ athleteInfoId: profileId }, { clubInfoId: profileId }],
     },
@@ -144,34 +158,43 @@ const getProfileDetailsFromDb = async (profileId: string, userId: string) => {
 
   if (!posts) throw new ApiError(StatusCodes.NOT_FOUND, "Profile not found");
 
-  const { AthleteInfo, ClubInfo, userDetails, ...restData } = posts;
-
-  const user = await prisma.user.findUnique({
-    where: { id: posts.userDetails.id },
+  const filteredPosts = posts.map((post) => {
+    const {
+      athleteInfoId,
+      clubInfoId,
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      ...restData
+    } = post;
+    return restData;
   });
 
-  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  const user = posts.map((post) => post.userDetails)[0];
+  const athleteInfo = posts.map((post) => post.AthleteInfo)[0];
+  const clubInfo = posts.map((post) => post.ClubInfo)[0];
 
-  const result = {
-    ...restData,
-    profileInfo:
-      user?.profileRole === "ATHLETE" ? posts?.AthleteInfo : posts?.ClubInfo,
-    isOwner:
-      userId === posts?.AthleteInfo?.userId ||
-      userId === posts?.ClubInfo?.userId,
+  const profile = {
+    profileId: athleteInfo?.id || clubInfo?.id,
+    profileRole: user?.profileRole,
+    fullName: athleteInfo?.fullName || clubInfo?.clubName,
+    profileImage: athleteInfo?.profileImage || clubInfo?.logoImage,
+    sportName: athleteInfo?.sportName || clubInfo?.sportName,
+    coverImage: user?.coverImage,
+    isOwner: userId === athleteInfo?.userId || userId === clubInfo?.userId,
   };
 
-  return result;
+  return { profile, posts: filteredPosts };
 };
 
 // const getMyPosts
 
-const getMyPosts = async (userId: string) => {
-  const posts = await prisma.post.findMany({
-    where: {
-      userId,
-    },
-    include: {
+const getMyPosts = async (userId: string, query: any) => {
+  const posts = await dynamicQueryBuilder({
+    model: prisma.post,
+    query,
+    forcedFilters: { userId },
+    includes: {
       AthleteInfo: {
         select: {
           id: true,
@@ -190,41 +213,50 @@ const getMyPosts = async (userId: string) => {
       },
       userDetails: {
         select: {
-          profileRole: true,
+          profileRole: true
         },
       },
     },
   });
 
-  if (!posts || posts.length === 0) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "No posts found");
-  }
+  // if (!posts || posts.data.length === 0) {
+  //   throw new ApiError(StatusCodes.NOT_FOUND, "No posts found");
+  // }
 
-  const result = posts.map((post) => {
-    const { AthleteInfo, ClubInfo, userDetails, ...restData } = post;
-
-    const profileData =
-      userDetails.profileRole === "ATHLETE"
-        ? {
-            profileId: AthleteInfo?.id,
-            fullName: AthleteInfo?.fullName,
-            profileImage: AthleteInfo?.profileImage,
-            sportName: AthleteInfo?.sportName,
-          }
-        : {
-            profileId: ClubInfo?.id,
-            clubName: ClubInfo?.clubName,
-            logoImage: ClubInfo?.logoImage,
-            sportName: ClubInfo?.sportName,
-          };
-
-    return {
-      postData: restData,
-      profileInfo: profileData,
-    };
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { AthleteInfo: true, ClubInfo: true },
   });
 
-  return result;
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+  const result = posts.data.map((post: any) => {
+    const {
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      athleteInfoId,
+      clubInfoId,
+      ...restData
+    } = post;
+    return restData;
+  });
+
+  const athleteInfo = user.AthleteInfo;
+  const clubInfo = user.ClubInfo;
+
+  const profile = {
+    profileId: user?.AthleteInfo?.id || user?.ClubInfo?.id,
+    profileRole: user?.profileRole,
+    fullName: user?.AthleteInfo?.fullName || user?.ClubInfo?.clubName,
+    profileImage: user?.AthleteInfo?.profileImage || user?.ClubInfo?.logoImage,
+    sportName: user?.AthleteInfo?.sportName || user?.ClubInfo?.sportName,
+    coverImage: user?.coverImage,
+    isOwner:
+      userId === athleteInfo?.userId || userId === clubInfo?.userId,
+  };
+
+  return { profile, metadata: posts.meta, posts: result };
 };
 
 export const postService = {

@@ -37,16 +37,25 @@ const createUserIntoDB = async (payload: User) => {
     },
   });
 
-  await prisma.athleteInfo.create({
+  const athleteInfo = await prisma.athleteInfo.create({
     data: { userId: result.id },
   });
 
-  await prisma.clubInfo.create({
+  const clubInfo = await prisma.clubInfo.create({
     data: { userId: result.id },
   });
 
-  await prisma.brandInfo.create({
+  const brandInfo = await prisma.brandInfo.create({
     data: { userId: result.id },
+  });
+  
+  await prisma.user.update({
+    where: { id: result.id },
+    data: {
+      athleteInfoId: athleteInfo.id,
+      clubInfoId: clubInfo.id,
+      brandInfoId: brandInfo.id,
+    },
   });
 
   OTPFn(payload.email);
