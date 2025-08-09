@@ -68,7 +68,6 @@ export const getFileUrls = async (files: Express.MulterS3.File[]) => {
   });
 };
 
-
 // Single image uploads
 const uploadUniversal = upload.fields([
   { name: "profileImage", maxCount: 1 },
@@ -79,7 +78,8 @@ const uploadUniversal = upload.fields([
   { name: "licenseImage", maxCount: 1 },
   { name: "certificateImage", maxCount: 1 },
   { name: "image", maxCount: 1 }, // For single image upload
-  { name: "video", maxCount: 1 },// For single video upload
+  { name: "video", maxCount: 1 }, // For single video upload
+  { name: "banner", maxCount: 1 },
 ]);
 
 // Multiple image uploads

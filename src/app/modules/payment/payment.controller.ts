@@ -5,20 +5,20 @@ import sendResponse from "../../middleware/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { adminService } from "../admin/admin.service";
 
-const createPaymentController = catchAsync(
-  async (req: Request, res: Response) => {
-    const payload = req.body as any;
-    const { id: userId } = req.user;
+// const createPaymentController = catchAsync(
+//   async (req: Request, res: Response) => {
+//     const payload = req.body as any;
+//     const { id: userId } = req.user;
 
-    const result = await paymentService.splitPaymentFromStripe(payload, userId);
-    sendResponse(res, {
-      statusCode: StatusCodes.CREATED,
-      message: "Payment created successfully",
-      data: result,
-      success: true,
-    });
-  }
-);
+//     const result = await paymentService.splitPaymentFromStripe(payload, userId);
+//     sendResponse(res, {
+//       statusCode: StatusCodes.CREATED,
+//       message: "Payment created successfully",
+//       data: result,
+//       success: true,
+//     });
+//   }
+// );
 
 const saveCardController = catchAsync(async (req: Request, res: Response) => {
   const body = req.body as any;
@@ -74,9 +74,10 @@ const getTiersController = catchAsync(async (req: Request, res: Response) => {
 
 const joinTierController = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
-  const { tierId } = req.body;
+  const { tierId, clubOrPlayerId } = req.body;
+  const file = req.files as Express.MulterS3.File[];
 
-  const result = await paymentService.joinTier(userId, tierId);
+  const result = await paymentService.joinTier(userId, req.body, file);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     message: "Joined tier successfully",
@@ -86,7 +87,7 @@ const joinTierController = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const paymentController = {
-  createPaymentController,
+  // createPaymentController,
   saveCardController,
   getSaveCardController,
   deleteCardController,

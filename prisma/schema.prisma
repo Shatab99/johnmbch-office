@@ -64,6 +64,7 @@ model AthleteInfo {
   updatedAt        DateTime @updatedAt
   User             User[]
   post             Post[]
+  sponsorsIds      String[] @default([])
 }
 
 model ClubInfo {
@@ -83,6 +84,7 @@ model ClubInfo {
   updatedAt        DateTime  @updatedAt
   User             User[]
   post             Post[]
+  sponsorsIds      String[]  @default([])
 }
 
 model BrandInfo {
@@ -95,6 +97,7 @@ model BrandInfo {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   User      User[]
+  post      Post[]
 }
 
 model Tier {
@@ -103,18 +106,15 @@ model Tier {
   type        TierType
   amount      Float
   description String
-  features    Features[]
+  showProfile Boolean @default(false)
+  showContent Boolean @default(false)
+  showBanner  Boolean @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
   @@map("tiers")
 }
 
-enum Features {
-  PROFILE
-  CONTENT
-  BANNER
-}
 
 enum TierType {
   INDIVIDUAL
@@ -136,6 +136,8 @@ model Post {
   athleteInfoId String?      @db.ObjectId
   ClubInfo      ClubInfo?    @relation(fields: [clubInfoId], references: [id])
   clubInfoId    String?      @db.ObjectId
+  BrandInfo     BrandInfo?   @relation(fields: [brandInfoId], references: [id])
+  brandInfoId   String?      @db.ObjectId
 }
 
 enum ProfileRole {

@@ -15,5 +15,12 @@ router.post(
 );
 
 router.get("/get-all-tiers", auth(Role.ADMIN), adminController.getAllTiers);
+router.delete("/delete-tier/:id", auth(Role.ADMIN), adminController.deleteTier);
+router.put(
+  "/edit-tier/:id",
+  auth(Role.ADMIN),
+  validateRequest(adminValidation.editTier),
+  adminController.editATier
+);
 
 export const adminRoutes = router;

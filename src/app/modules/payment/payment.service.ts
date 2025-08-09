@@ -164,58 +164,6 @@ const deleteCardFromStripe = async (userId: string, last4: string) => {
   await stripe.paymentMethods.detach(card.id);
 };
 
-const splitPaymentFromStripe = async (
-  payload: {
-    amount: number;
-    paymentMethodId: string;
-    bookingId: string;
-    providerId: string;
-    paymentMethod?: string;
-  },
-  id: string
-) => {
-  const finderUser = await prisma.user.findUnique({
-    where: { id: payload.providerId },
-  });
-
-  if (finderUser?.connectAccountId === null) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  }
-  const payment = await stripe.paymentIntents.create({
-    amount: Math.round(payload.amount * 100),
-    currency: payload?.paymentMethod || "usd",
-    payment_method: payload.paymentMethodId,
-    confirm: true,
-    payment_method_types: ["card"], // 🔥 Important: to avoid auto-redirects or default behavior
-    application_fee_amount: Math.round(payload.amount * 0.1 * 100), // $7 in cents , 10% here
-    transfer_data: {
-      destination: finderUser?.connectAccountId as string,
-    },
-  });
-
-  if (payment.status !== "succeeded") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Payment failed!");
-  }
-
-  await prisma.payment.create({
-    data: {
-      userId: id,
-      amount: payload.amount,
-      paymentMethod: payload.paymentMethod,
-      serviceId: payload.bookingId,
-    },
-  });
-
-  await prisma.booking.update({
-    where: {
-      id: payload.bookingId,
-    },
-    data: {
-      isPaid: true,
-    },
-  });
-};
-
 const transferAmountFromStripe = async (payload: {
   amount: number;
   connectAccountId: string;
@@ -367,7 +315,101 @@ const cancelSubscriptionFromStripe = async (payload: { userId: string }) => {
   return cancelledSubscription;
 };
 
-const joinTier = async (userId: string, tierId: string) => {};
+const splitPaymentFromStripe = async (payload: {
+  amount: number;
+  paymentMethodId: string;
+  providerId: string;
+  paymentMethod?: string;
+}) => {
+  const finderUser = await prisma.user.findUnique({
+    where: { id: payload.providerId },
+  });
+
+  if (finderUser?.connectAccountId === null) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+  }
+  const payment = await stripe.paymentIntents.create({
+    amount: Math.round(payload.amount * 100),
+    currency: payload?.paymentMethod || "usd",
+    payment_method: payload.paymentMethodId,
+    confirm: true,
+    payment_method_types: ["card"], // 🔥 Important: to avoid auto-redirects or default behavior
+    application_fee_amount: Math.round(payload.amount * 0.1 * 100), // $7 in cents , 10% here
+    transfer_data: {
+      destination: finderUser?.connectAccountId as string,
+    },
+  });
+
+  if (payment.status !== "succeeded") {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Payment failed!");
+  }
+
+  return payment;
+};
+
+const joinTier = async (userId: string, body: any, files: any) => {
+  const image = files.banner?.[0]?.location;
+  const { tierId, clubOrPlayerUserId: providerId, content } = body;
+
+  const tier = await prisma.tier.findUnique({
+    where: { id: tierId },
+  });
+
+  if (!tier) throw new ApiError(StatusCodes.NOT_FOUND, "Tier not found!");
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+  if (user.profileRole !== "BRAND")
+    throw new ApiError(StatusCodes.FORBIDDEN, "User is not a brand!");
+
+  const brandInfo = await prisma.brandInfo.findUnique({ where: { userId } });
+  if (!brandInfo)
+    throw new ApiError(StatusCodes.NOT_FOUND, "Brand info not found!");
+
+  const clubORAthleteUser = await prisma.user.findUnique({
+    where: { id: providerId },
+  });
+
+  const paymentdata = {
+    providerId,
+    paymentMethodId: "card",
+    amount: tier.amount,
+    paymentMethod: "usd",
+  };
+
+  // await splitPaymentFromStripe(paymentdata);
+
+  await prisma.post.create({
+    data: {
+      userId,
+      content: tier.showContent ? content : undefined,
+      image: tier.showBanner ? image : undefined,
+      brandInfoId: tier.showProfile ? brandInfo.id : undefined,
+    },
+  });
+
+  if (clubORAthleteUser?.profileRole === "CLUB") {
+    await prisma.clubInfo.update({
+      where: { userId: providerId },
+      data: {
+        sponsorsIds: { push: userId },
+      },
+    });
+  }
+
+  if (clubORAthleteUser?.profileRole === "ATHLETE") {
+    await prisma.athleteInfo.update({
+      where: { userId: providerId },
+      data: {
+        sponsorsIds: { push: userId },
+      },
+    });
+  }
+
+  return "success";
+};
 
 export const paymentService = {
   createIntentInStripe,
