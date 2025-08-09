@@ -145,6 +145,7 @@ const getProfileDetailsFromDb = async (
   userId: string,
   query: any
 ) => {
+  const { showSponsoredPosts } = query;
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query,
@@ -212,6 +213,10 @@ const getProfileDetailsFromDb = async (
     } = post;
     return restData;
   });
+
+  if (showSponsoredPosts === "true") {
+    // tomorrow I will implement the logic to retrieve sponsored posts 
+  }
 
   return { profile, metaData: posts.meta, posts: result };
 };

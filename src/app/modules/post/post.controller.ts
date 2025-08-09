@@ -59,6 +59,7 @@ const getMyPosts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
 export const postController = {
   createPost,
   getAllPosts,
