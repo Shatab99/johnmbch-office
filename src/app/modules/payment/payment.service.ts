@@ -367,6 +367,8 @@ const cancelSubscriptionFromStripe = async (payload: { userId: string }) => {
   return cancelledSubscription;
 };
 
+const joinTier = async (userId: string, tierId: string) => {};
+
 export const paymentService = {
   createIntentInStripe,
   saveCardInStripe,
@@ -377,4 +379,5 @@ export const paymentService = {
   refundPaymentFromStripe,
   subscribeToPlanFromStripe,
   cancelSubscriptionFromStripe,
+  joinTier,
 };

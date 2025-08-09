@@ -3,6 +3,7 @@ import catchAsync from "../../../shared/catchAsync";
 import { paymentService } from "./payment.service";
 import sendResponse from "../../middleware/sendResponse";
 import { StatusCodes } from "http-status-codes";
+import { adminService } from "../admin/admin.service";
 
 const createPaymentController = catchAsync(
   async (req: Request, res: Response) => {
@@ -61,9 +62,34 @@ const deleteCardController = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getTiersController = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.getAllTiers(req.query);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Tiers retrieved successfully",
+    data: result,
+    success: true,
+  });
+});
+
+const joinTierController = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const { tierId } = req.body;
+
+  const result = await paymentService.joinTier(userId, tierId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Joined tier successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const paymentController = {
   createPaymentController,
   saveCardController,
   getSaveCardController,
   deleteCardController,
+  getTiersController,
+  joinTierController,
 };
