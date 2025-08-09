@@ -379,7 +379,24 @@ const joinTier = async (userId: string, body: any, files: any) => {
     paymentMethod: "usd",
   };
 
-  // await splitPaymentFromStripe(paymentdata);
+  if (image && !tier.showBanner)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot upload a banner for this tier!"
+    );
+  if (content && !tier.showContent)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot upload content for this tier!"
+    );
+
+  if (brandInfo && !tier.showProfile)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot upload a profile for this tier!"
+    );
+
+  await splitPaymentFromStripe(paymentdata);
 
   await prisma.post.create({
     data: {
@@ -408,7 +425,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
     });
   }
 
-  return "success";
+  return "successfully joined the tier";
 };
 
 export const paymentService = {
