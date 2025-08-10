@@ -6,6 +6,7 @@ import { StatusCodes } from "http-status-codes";
 import validateRequest from "../../middleware/validateRequest";
 import { UserValidation } from "./user.validation";
 import ApiError from "../../error/ApiErrors";
+import { adminService } from "../admin/admin.service";
 
 const createUserController = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
@@ -127,6 +128,17 @@ const updateCoverImageController = catchAsync(
   }
 );
 
+const getSports = catchAsync(async (req: Request, res: Response) => {
+  const result = await adminService.getAllSports();
+  const formattedResult = result.map((sport) => sport.name);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Sports retrieved successfully",
+    data: formattedResult,
+    success: true,
+  });
+});
+
 export const userController = {
   createUserController,
   updateUserController,
@@ -134,4 +146,5 @@ export const userController = {
   getMyProfileController,
   sendCodeBeforeUpdate,
   updateCoverImageController,
+  getSports,
 };

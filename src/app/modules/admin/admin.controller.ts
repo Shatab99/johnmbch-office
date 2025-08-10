@@ -42,11 +42,45 @@ const editATier = catchAsync(async (req, res) => {
     success: true,
     message: "Tier updated successfully",
   });
-}); 
+});
+
+const addSports = catchAsync(async (req, res) => {
+  const result = await adminService.addSports(req.body);
+  sendResponse(res, {
+    statusCode: 200,
+    data: result,
+    success: true,
+    message: "Sports added successfully",
+  });
+});
+
+const deleteSports = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await adminService.deleteSports(id);
+  sendResponse(res, {
+    statusCode: 200,
+    data: result,
+    success: true,
+    message: "Sports deleted successfully",
+  });
+});
+
+const getAllSports = catchAsync(async (req, res) => {
+  const result = await adminService.getAllSports();
+  sendResponse(res, {
+    statusCode: 200,
+    data: result,
+    success: true,
+    message: "Sports retrieved successfully",
+  });
+});
 
 export const adminController = {
   createTier,
   getAllTiers,
   deleteTier,
+  addSports,
   editATier,
+  deleteSports,
+  getAllSports,
 };

@@ -38,4 +38,6 @@ route.post(
   userController.sendCodeBeforeUpdate
 );
 
+route.get("/sports", auth(Role.USER), userController.getSports);
+
 export const userRoutes = route;

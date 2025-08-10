@@ -35,4 +35,6 @@ router.get(
   postController.searchProfile
 );
 
+
+
 export const postRoutes = router;

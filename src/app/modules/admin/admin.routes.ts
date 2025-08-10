@@ -23,4 +23,19 @@ router.put(
   adminController.editATier
 );
 
+//sports  sections
+
+router.get("/get-all-sports", auth(Role.ADMIN), adminController.getAllSports);
+router.post(
+  "/add-sports",
+  auth(Role.ADMIN),
+  validateRequest(adminValidation.addSports),
+  adminController.addSports
+);
+router.delete(
+  "/delete-sports/:id",
+  auth(Role.ADMIN),
+  adminController.deleteSports
+);
+
 export const adminRoutes = router;

@@ -16,7 +16,12 @@ const editTier = z.object({
   features: z.array(z.enum(["CONTENT", "BANNER", "PROFILE"])).optional(),
 });
 
+const addSports = z.object({
+  name: z.string().min(1, "Name is required"),
+});
+
 export const adminValidation = {
   createTier,
   editTier,
+  addSports,
 };

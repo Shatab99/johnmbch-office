@@ -3,6 +3,7 @@ import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../middleware/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { postService } from "./post.service";
+import { adminService } from "../admin/admin.service";
 
 const createPost = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.user;
@@ -100,5 +101,5 @@ export const postController = {
   searchProfile,
   likePost,
   unlikePost,
-  getProfileDetails,
+  getProfileDetails
 };

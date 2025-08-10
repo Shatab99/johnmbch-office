@@ -60,9 +60,33 @@ const editATier = async (id: string, data: any) => {
   return result;
 };
 
+const addSports = async (data: any) => {
+  const result = await prisma.sports.create({
+    data: {
+      name: data.name.toLowerCase(),
+    },
+  });
+  return result;
+};
+
+const deleteSports = async (id: string) => {
+  const result = await prisma.sports.delete({
+    where: { id },
+  });
+  return result;
+};
+
+const getAllSports = async () => {
+  const result = await prisma.sports.findMany();
+  return result;
+};
+
 export const adminService = {
   createTier,
   getAllTiers,
   deleteTier,
+  addSports,
   editATier,
+  deleteSports,
+  getAllSports,
 };
