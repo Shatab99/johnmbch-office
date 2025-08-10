@@ -108,6 +108,34 @@ const getAllPostsFromDb = async (query: any) => {
           id: true,
           userId: true,
           postId: true,
+          User: {
+            select: {
+              profileRole: true,
+              AthleteInfo: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  profileImage: true,
+                  sportName: true,
+                },
+              },
+              ClubInfo: {
+                select: {
+                  id: true,
+                  clubName: true,
+                  logoImage: true,
+                  sportName: true,
+                },
+              },
+              BrandInfo: {
+                select: {
+                  id: true,
+                  brandName: true,
+                  logoImage: true,
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -121,6 +149,7 @@ const getAllPostsFromDb = async (query: any) => {
       userDetails,
       athleteInfoId,
       clubInfoId,
+      likes,
       ...restData
     } = post;
 
@@ -139,8 +168,46 @@ const getAllPostsFromDb = async (query: any) => {
             sportName: ClubInfo?.sportName,
           };
 
+    const likesData = likes.map((like: any) => {
+      const {
+        id,
+        userId,
+        postId,
+        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo },
+      } = like;
+
+      const profileData =
+        profileRole === "ATHLETE"
+          ? {
+              profileId: AthleteInfo?.id,
+              fullName: AthleteInfo?.fullName,
+              profileImage: AthleteInfo?.profileImage,
+              sportName: AthleteInfo?.sportName,
+            }
+          : profileRole === "CLUB"
+          ? {
+              profileId: ClubInfo?.id,
+              clubName: ClubInfo?.clubName,
+              logoImage: ClubInfo?.logoImage,
+              sportName: ClubInfo?.sportName,
+            }
+          : {
+              profileId: BrandInfo?.id,
+              brandName: BrandInfo?.brandName,
+              logoImage: BrandInfo?.logoImage,
+              sportName: BrandInfo?.sportName,
+            };
+
+      return {
+        likeId: id,
+        userId,
+        postId,
+        profileInfo: profileData,
+      };
+    });
+
     return {
-      postData: { postId: post.id, ...restData },
+      postData: { postId: post.id, ...restData, likes: likesData },
       profileInfo: profileData,
     };
   });
@@ -196,6 +263,34 @@ const getProfileDetailsFromDb = async (
           id: true,
           userId: true,
           postId: true,
+          User: {
+            select: {
+              profileRole: true,
+              AthleteInfo: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  profileImage: true,
+                  sportName: true,
+                },
+              },
+              ClubInfo: {
+                select: {
+                  id: true,
+                  clubName: true,
+                  logoImage: true,
+                  sportName: true,
+                },
+              },
+              BrandInfo: {
+                select: {
+                  id: true,
+                  brandName: true,
+                  logoImage: true,
+                },
+              },
+            },
+          },
         },
       },
       BrandInfo: {
@@ -237,6 +332,7 @@ const getProfileDetailsFromDb = async (
       clubInfoId,
       brandInfoId,
       BrandInfo,
+      likes,
       ...postData
     } = post;
 
@@ -255,6 +351,44 @@ const getProfileDetailsFromDb = async (
             sportName: ClubInfo?.sportName,
           };
 
+    const likesData = likes.map((like: any) => {
+      const {
+        id,
+        userId,
+        postId,
+        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo },
+      } = like;
+
+      const profileData =
+        profileRole === "ATHLETE"
+          ? {
+              profileId: AthleteInfo?.id,
+              fullName: AthleteInfo?.fullName,
+              profileImage: AthleteInfo?.profileImage,
+              sportName: AthleteInfo?.sportName,
+            }
+          : profileRole === "CLUB"
+          ? {
+              profileId: ClubInfo?.id,
+              clubName: ClubInfo?.clubName,
+              logoImage: ClubInfo?.logoImage,
+              sportName: ClubInfo?.sportName,
+            }
+          : {
+              profileId: BrandInfo?.id,
+              brandName: BrandInfo?.brandName,
+              logoImage: BrandInfo?.logoImage,
+              sportName: BrandInfo?.sportName,
+            };
+
+      return {
+        likeId: id,
+        userId,
+        postId,
+        profileInfo: profileData,
+      };
+    });
+
     const brandProfile = {
       profileId: BrandInfo?.id,
       name: BrandInfo?.brandName,
@@ -265,6 +399,7 @@ const getProfileDetailsFromDb = async (
     return {
       profile: showSponsoredPosts === "true" ? brandProfile : profileData,
       postData,
+      likes: likesData,
     };
   });
 
@@ -304,6 +439,34 @@ const getMyPosts = async (userId: string, query: any) => {
           profileRole: true,
         },
       },
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          postId: true,
+          User: {
+            select: {
+              profileRole: true,
+              AthleteInfo: {
+                select: { id: true, fullName: true, profileImage: true },
+              },
+              ClubInfo: {
+                select: { id: true, clubName: true, logoImage: true },
+              },
+              BrandInfo: {
+                select: { id: true, brandName: true, logoImage: true },
+              },
+            },
+          },
+        },
+      },
+      BrandInfo: {
+        select: {
+          id: true,
+          brandName: true,
+          logoImage: true,
+        },
+      },
     },
   });
 
@@ -316,14 +479,73 @@ const getMyPosts = async (userId: string, query: any) => {
 
   const result = posts.data.map((post: any) => {
     const {
+      id,
       AthleteInfo,
       ClubInfo,
       userDetails,
       athleteInfoId,
       clubInfoId,
-      ...restData
+      brandInfoId,
+      BrandInfo,
+      likes,
+      ...postData
     } = post;
-    return restData;
+
+    const profileData =
+      userDetails.profileRole === "ATHLETE"
+        ? {
+            profileId: AthleteInfo?.id,
+            name: AthleteInfo?.fullName,
+            profileImage: AthleteInfo?.profileImage,
+            sportName: AthleteInfo?.sportName,
+          }
+        : {
+            profileId: ClubInfo?.id,
+            name: ClubInfo?.clubName,
+            profileImage: ClubInfo?.logoImage,
+            sportName: ClubInfo?.sportName,
+          };
+
+    const brandProfile = {
+      profileId: BrandInfo?.id,
+      name: BrandInfo?.brandName,
+      profileImage: BrandInfo?.logoImage,
+      sportName: BrandInfo?.sportName,
+    };
+    const likeData = post.likes.map((like: any) => {
+      return {
+        id: like.id,
+        userId: like.userId,
+        postId: like.postId,
+        profile: {
+          id: like.User.id,
+          name:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.fullName
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.clubName
+              : like.User.BrandInfo.brandName,
+          profileImage:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.profileImage
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.logoImage
+              : like.User.BrandInfo.logoImage,
+          sportName:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.sportName
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.sportName
+              : "Sponsor",
+        },
+      };
+    });
+
+    return {
+      profile: showSponsoredPosts === "true" ? brandProfile : profileData,
+      postData,
+      likes: likeData,
+    };
   });
 
   const athleteInfo = user.AthleteInfo;
