@@ -141,14 +141,15 @@ const getAllPostsFromDb = async (query: any) => {
 
 // get profile details and
 const getProfileDetailsFromDb = async (
-  profileId: string,
+  profileUserId: string,
   userId: string,
   query: any
 ) => {
-  const { showSponsoredPosts } = query;
+  const { showSponsoredPosts, ... restQuery } = query;
+
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
-    query,
+    query: restQuery,
     searchableFields: [
       "ClubInfo.clubName",
       "ClubInfo.sportName",
@@ -156,7 +157,8 @@ const getProfileDetailsFromDb = async (
       "AthleteInfo.sportName",
     ],
     forcedFilters: {
-      OR: [{ athleteInfoId: profileId }, { clubInfoId: profileId }],
+      userId: profileUserId,
+      isSponsored: showSponsoredPosts === "true" ? true : false,
     },
     includes: {
       AthleteInfo: {
@@ -209,13 +211,15 @@ const getProfileDetailsFromDb = async (
       userDetails,
       athleteInfoId,
       clubInfoId,
+      brandInfoId,
       ...restData
     } = post;
     return restData;
   });
 
   if (showSponsoredPosts === "true") {
-    // tomorrow I will implement the logic to retrieve sponsored posts 
+    // please implement the logic to retrieve sponsored posts
+    // const sponsoredPosts = await prisma.post.findMany({where: {isSponsored: true}})
   }
 
   return { profile, metaData: posts.meta, posts: result };

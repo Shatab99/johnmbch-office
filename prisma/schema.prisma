@@ -138,6 +138,7 @@ model Post {
   clubInfoId    String?      @db.ObjectId
   BrandInfo     BrandInfo?   @relation(fields: [brandInfoId], references: [id])
   brandInfoId   String?      @db.ObjectId
+  isSponsored   Boolean      @default(false)
 }
 
 enum ProfileRole {
