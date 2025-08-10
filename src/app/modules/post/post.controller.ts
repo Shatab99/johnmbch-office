@@ -83,10 +83,21 @@ const unlikePost = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const searchProfile = catchAsync(async (req: Request, res: Response) => {
+  const result = await postService.searchProfile(req.query);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Profile search results retrieved successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const postController = {
   createPost,
   getAllPosts,
   getMyPosts,
+  searchProfile,
   likePost,
   unlikePost,
   getProfileDetails,

@@ -29,5 +29,10 @@ router.get("/my-posts", auth(Role.USER), postController.getMyPosts);
 
 router.post("/like-post/:postId", auth(Role.USER), postController.likePost);
 router.post("/unlike-post/:postId", auth(Role.USER), postController.unlikePost);
+router.get(
+  "/search-profile",
+  auth(Role.USER),
+  postController.searchProfile
+);
 
 export const postRoutes = router;

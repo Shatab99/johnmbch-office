@@ -396,7 +396,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
       "You cannot upload a profile for this tier!"
     );
 
-  // await splitPaymentFromStripe(paymentdata);
+  await splitPaymentFromStripe(paymentdata);
 
   await prisma.post.create({
     data: {

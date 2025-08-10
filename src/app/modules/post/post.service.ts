@@ -598,6 +598,81 @@ const unlikePost = async (postId: string, userId: string) => {
   return like;
 };
 
+const searchProfile = async (query: any) => {
+  if (!query) {
+    return [];
+  }
+
+  const { search } = query;
+
+  // Search AthleteInfo
+  const athletes = await prisma.athleteInfo.findMany({
+    where: {
+      OR: [
+        { fullName: { contains: search, mode: "insensitive" } },
+        { clubName: { contains: search, mode: "insensitive" } },
+        { sportName: { contains: search, mode: "insensitive" } },
+      ],
+    },
+    select: {
+      fullName: true,
+      profileImage: true,
+      sportName: true,
+    },
+  });
+
+  // Search ClubInfo
+  const clubs = await prisma.clubInfo.findMany({
+    where: {
+      OR: [
+        { clubName: { contains: search, mode: "insensitive" } },
+        { sportName: { contains: search, mode: "insensitive" } },
+        { city: { contains: search, mode: "insensitive" } },
+        { country: { contains: search, mode: "insensitive" } },
+      ],
+    },
+    select: {
+      clubName: true,
+      logoImage: true,
+      sportName: true,
+    },
+  });
+
+  // Search BrandInfo
+  const brands = await prisma.brandInfo.findMany({
+    where: {
+      OR: [
+        { brandName: { contains: search, mode: "insensitive" } },
+        { city: { contains: search, mode: "insensitive" } },
+        { country: { contains: search, mode: "insensitive" } },
+      ],
+    },
+    select: {
+      brandName: true,
+      logoImage: true,
+    },
+  });
+
+  // Map and unify all profiles
+  const mapProfile = (
+    name: string | null | undefined,
+    image: string | null | undefined,
+    sportName: string | null | undefined
+  ) => ({
+    profileName: name || "Unknown",
+    profileImage: image || "",
+    sportName: sportName && sportName.trim() !== "" ? sportName : "Sponsor",
+  });
+
+  const result = [
+    ...athletes.map((a) => mapProfile(a.fullName, a.profileImage, a.sportName)),
+    ...clubs.map((c) => mapProfile(c.clubName, c.logoImage, c.sportName)),
+    ...brands.map((b) => mapProfile(b.brandName, b.logoImage, "Sponsor")),
+  ];
+
+  return result;
+};
+
 export const postService = {
   createPostInDb,
   getAllPostsFromDb,
@@ -605,4 +680,5 @@ export const postService = {
   likePost,
   getMyPosts,
   unlikePost,
+  searchProfile,
 };
