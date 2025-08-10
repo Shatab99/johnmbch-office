@@ -5,6 +5,7 @@ import { postRoutes } from "../modules/post/post.route";
 import { chatRoutes } from "../modules/chat/chat.route";
 import { adminRoutes } from "../modules/admin/admin.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
+import { sponsorRoutes } from "../modules/sponsors/sponsor.routes";
 // import { foodRoutes } from "../modules/foods/foods.Routes"
 // import { locationRoutes } from "../modules/location/location.Routes"
 
@@ -33,6 +34,10 @@ const routes = [
   {
     path: "/payment",
     component: paymentRoutes,
+  },
+  {
+    path: "/sponsors",
+    component: sponsorRoutes,
   },
 ];
 
