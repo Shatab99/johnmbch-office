@@ -74,6 +74,7 @@ const getAllPostsFromDb = async (query: any) => {
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query,
+    forcedFilters: { isSponsored: false },
     searchableFields: [
       "ClubInfo.clubName",
       "ClubInfo.sportName",
@@ -102,11 +103,19 @@ const getAllPostsFromDb = async (query: any) => {
           profileRole: true,
         },
       },
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          postId: true,
+        },
+      },
     },
   });
 
   const result = posts.data.map((post: any) => {
     const {
+      id,
       AthleteInfo,
       ClubInfo,
       userDetails,
@@ -131,7 +140,7 @@ const getAllPostsFromDb = async (query: any) => {
           };
 
     return {
-      postData: restData,
+      postData: { postId: post.id, ...restData },
       profileInfo: profileData,
     };
   });
@@ -145,7 +154,7 @@ const getProfileDetailsFromDb = async (
   userId: string,
   query: any
 ) => {
-  const { showSponsoredPosts, ... restQuery } = query;
+  const { showSponsoredPosts, ...restQuery } = query;
 
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
@@ -182,6 +191,20 @@ const getProfileDetailsFromDb = async (
           profileRole: true,
         },
       },
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          postId: true,
+        },
+      },
+      BrandInfo: {
+        select: {
+          id: true,
+          brandName: true,
+          logoImage: true,
+        },
+      },
     },
   });
 
@@ -206,21 +229,44 @@ const getProfileDetailsFromDb = async (
 
   const result = posts.data.map((post: any) => {
     const {
+      id,
       AthleteInfo,
       ClubInfo,
       userDetails,
       athleteInfoId,
       clubInfoId,
       brandInfoId,
-      ...restData
+      BrandInfo,
+      ...postData
     } = post;
-    return restData;
-  });
 
-  if (showSponsoredPosts === "true") {
-    // please implement the logic to retrieve sponsored posts
-    // const sponsoredPosts = await prisma.post.findMany({where: {isSponsored: true}})
-  }
+    const profileData =
+      userDetails.profileRole === "ATHLETE"
+        ? {
+            profileId: AthleteInfo?.id,
+            name: AthleteInfo?.fullName,
+            profileImage: AthleteInfo?.profileImage,
+            sportName: AthleteInfo?.sportName,
+          }
+        : {
+            profileId: ClubInfo?.id,
+            name: ClubInfo?.clubName,
+            profileImage: ClubInfo?.logoImage,
+            sportName: ClubInfo?.sportName,
+          };
+
+    const brandProfile = {
+      profileId: BrandInfo?.id,
+      name: BrandInfo?.brandName,
+      profileImage: BrandInfo?.logoImage,
+      sportName: BrandInfo?.sportName,
+    };
+
+    return {
+      profile: showSponsoredPosts === "true" ? brandProfile : profileData,
+      postData,
+    };
+  });
 
   return { profile, metaData: posts.meta, posts: result };
 };
@@ -228,10 +274,14 @@ const getProfileDetailsFromDb = async (
 // const getMyPosts
 
 const getMyPosts = async (userId: string, query: any) => {
+  const { showSponsoredPosts, ...restQuery } = query;
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
-    query,
-    forcedFilters: { userId },
+    query: restQuery,
+    forcedFilters: {
+      userId,
+      isSponsored: showSponsoredPosts === "true" ? true : false,
+    },
     includes: {
       AthleteInfo: {
         select: {
@@ -256,10 +306,6 @@ const getMyPosts = async (userId: string, query: any) => {
       },
     },
   });
-
-  // if (!posts || posts.data.length === 0) {
-  //   throw new ApiError(StatusCodes.NOT_FOUND, "No posts found");
-  // }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -296,9 +342,45 @@ const getMyPosts = async (userId: string, query: any) => {
   return { profile, metadata: posts.meta, posts: result };
 };
 
+const likePost = async (postId: string, userId: string) => {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new ApiError(StatusCodes.NOT_FOUND, "Post not found");
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+  const like = await prisma.like.create({
+    data: {
+      userId: user.id,
+      postId: post.id,
+    },
+  });
+
+  return like;
+};
+
+const unlikePost = async (postId: string, userId: string) => {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new ApiError(StatusCodes.NOT_FOUND, "Post not found");
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+  const like = await prisma.like.deleteMany({
+    where: {
+      userId: user.id,
+      postId: post.id,
+    },
+  });
+
+  return like;
+};
+
 export const postService = {
   createPostInDb,
   getAllPostsFromDb,
   getProfileDetailsFromDb,
+  likePost,
   getMyPosts,
+  unlikePost,
 };

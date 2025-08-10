@@ -27,4 +27,7 @@ router.get("/all-posts", auth(Role.USER), postController.getAllPosts);
 
 router.get("/my-posts", auth(Role.USER), postController.getMyPosts);
 
+router.post("/like-post/:postId", auth(Role.USER), postController.likePost);
+router.post("/unlike-post/:postId", auth(Role.USER), postController.unlikePost);
+
 export const postRoutes = router;

@@ -23,24 +23,31 @@ model User {
   password         String
   fcmToken         String?
   profileRole      ProfileRole?
-  AthleteInfo      AthleteInfo?      @relation(fields: [athleteInfoId], references: [id])
-  ClubInfo         ClubInfo?         @relation(fields: [clubInfoId], references: [id])
-  BrandInfo        BrandInfo?        @relation(fields: [brandInfoId], references: [id])
   customerId       String?
   connectAccountId String?
   subscriptionPlan SubscriptionPlan?
   isVerified       Boolean           @default(false)
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+
+  athleteInfoId    String?           @db.ObjectId
+  AthleteInfo      AthleteInfo?      @relation(fields: [athleteInfoId], references: [id])
+
+  clubInfoId       String?           @db.ObjectId
+  ClubInfo         ClubInfo?         @relation(fields: [clubInfoId], references: [id])
+
+  brandInfoId      String?           @db.ObjectId
+  BrandInfo        BrandInfo?        @relation(fields: [brandInfoId], references: [id])
+
+  Post             Post[]
+  likes            Like[]
+
   receiver         Notifications[]   @relation("receiverDetails")
   sender           Notifications[]   @relation("senderDetails")
   Review           Review[]
   SubscriptionUser SubscriptionUser?
-  athleteInfoId    String?           @db.ObjectId
-  clubInfoId       String?           @db.ObjectId
-  brandInfoId      String?           @db.ObjectId
-  Post             Post[]
-  // chat here
+
+  // chat relations
   chatsSent        Chat[]            @relation("SenderRelation")
   chatsReceived    Chat[]            @relation("ReceiverRelation")
   roomsSent        Room[]            @relation("SenderRelation")
@@ -101,20 +108,19 @@ model BrandInfo {
 }
 
 model Tier {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   type        TierType
   amount      Float
   description String
-  showProfile Boolean @default(false)
-  showContent Boolean @default(false)
-  showBanner  Boolean @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  showProfile Boolean  @default(false)
+  showContent Boolean  @default(false)
+  showBanner  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("tiers")
 }
-
 
 enum TierType {
   INDIVIDUAL
@@ -128,17 +134,33 @@ model Post {
   image         String?
   video         String?
   userDetails   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes         String[]     @default([])
+  likes         Like[]
   shares        String[]     @default([])
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
-  AthleteInfo   AthleteInfo? @relation(fields: [athleteInfoId], references: [id])
+
   athleteInfoId String?      @db.ObjectId
-  ClubInfo      ClubInfo?    @relation(fields: [clubInfoId], references: [id])
+  AthleteInfo   AthleteInfo? @relation(fields: [athleteInfoId], references: [id])
+
   clubInfoId    String?      @db.ObjectId
-  BrandInfo     BrandInfo?   @relation(fields: [brandInfoId], references: [id])
+  ClubInfo      ClubInfo?    @relation(fields: [clubInfoId], references: [id])
+
   brandInfoId   String?      @db.ObjectId
+  BrandInfo     BrandInfo?   @relation(fields: [brandInfoId], references: [id])
+
   isSponsored   Boolean      @default(false)
+}
+
+model Like {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  User      User     @relation(fields: [userId], references: [id])
+
+  postId    String   @db.ObjectId
+  Post      Post     @relation(fields: [postId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum ProfileRole {
@@ -146,7 +168,6 @@ enum ProfileRole {
   BRAND
   ATHLETE
 }
-
 model Chat {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   senderId   String   @db.ObjectId

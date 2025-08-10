@@ -59,10 +59,35 @@ const getMyPosts = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const likePost = catchAsync(async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const { id } = req.user;
+  const result = await postService.likePost(postId, id);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Post liked successfully",
+    data: result,
+    success: true,
+  });
+});
+
+const unlikePost = catchAsync(async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const { id } = req.user;
+  const result = await postService.unlikePost(postId, id);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Post unliked successfully",
+    data: result,
+    success: true,
+  });
+});
 
 export const postController = {
   createPost,
   getAllPosts,
   getMyPosts,
+  likePost,
+  unlikePost,
   getProfileDetails,
 };
