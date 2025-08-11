@@ -425,23 +425,14 @@ const joinTier = async (userId: string, body: any, files: any) => {
     },
   });
 
-  if (clubORAthleteUser?.profileRole === "CLUB") {
-    await prisma.clubInfo.update({
-      where: { userId: providerId },
-      data: {
-        sponsorsIds: { push: userId },
-      },
-    });
-  }
+  //create room for chat
 
-  if (clubORAthleteUser?.profileRole === "ATHLETE") {
-    await prisma.athleteInfo.update({
-      where: { userId: providerId },
-      data: {
-        sponsorsIds: { push: userId },
-      },
-    });
-  }
+  await prisma.room.create({
+    data: {
+      senderId: userId,
+      receiverId: providerId,
+    },
+  });
 
   const message = `Successfully ${
     tier.type === "BRAND" ? "sponsored" : "supported"
