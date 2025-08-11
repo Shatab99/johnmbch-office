@@ -50,16 +50,7 @@ const createIntentInStripe = async (payload: payloadType, userId: string) => {
     },
   });
 
-  const completePayment = await prisma.booking.update({
-    where: {
-      id: payload.bookId,
-    },
-    data: {
-      isPaid: true,
-    },
-  });
-
-  return completePayment;
+  return;
 };
 
 const saveCardInStripe = async (payload: {
@@ -370,6 +361,10 @@ const joinTier = async (userId: string, body: any, files: any) => {
 
   const clubORAthleteUser = await prisma.user.findUnique({
     where: { id: providerId },
+    include: {
+      AthleteInfo: true,
+      ClubInfo: true,
+    },
   });
 
   const paymentdata = {
@@ -396,15 +391,37 @@ const joinTier = async (userId: string, body: any, files: any) => {
       "You cannot upload a profile for this tier!"
     );
 
-  await splitPaymentFromStripe(paymentdata);
+  // await splitPaymentFromStripe(paymentdata);
 
-  await prisma.post.create({
+  const post = await prisma.post.create({
     data: {
       userId: providerId,
       content: tier.showContent ? content : undefined,
       image: tier.showBanner ? image : undefined,
       brandInfoId: tier.showProfile ? brandInfo.id : undefined,
       isSponsored: true,
+    },
+  });
+
+  //create donor and recipient
+
+  const recipient = await prisma.recipient.create({
+    data: {
+      userId: providerId as string,
+      tierId: tierId as string,
+      amount: tier.amount,
+      postId: post.id,
+    },
+  });
+
+  await prisma.donor.create({
+    data: {
+      userId: userId,
+      tierId: tierId as string,
+      amount: tier.amount,
+      recipientId: recipient.id as string,
+      recipientUserId: providerId as string,
+      postId: post.id,
     },
   });
 
@@ -426,7 +443,15 @@ const joinTier = async (userId: string, body: any, files: any) => {
     });
   }
 
-  return "successfully joined the tier";
+  const message = `Successfully ${
+    tier.type === "BRAND" ? "sponsored" : "supported"
+  } tier on ${
+    clubORAthleteUser?.profileRole === "CLUB"
+      ? clubORAthleteUser.ClubInfo?.clubName
+      : clubORAthleteUser?.AthleteInfo?.fullName
+  } profile`;
+
+  return message;
 };
 
 export const paymentService = {

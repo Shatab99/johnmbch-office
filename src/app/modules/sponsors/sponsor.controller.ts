@@ -4,8 +4,9 @@ import sendResponse from "../../middleware/sendResponse";
 import { Request, Response } from "express";
 import { sponsorService } from "./sponsor.service";
 
-const getAllSponsors = catchAsync(async (req: Request, res: Response) => {
-  const result = await sponsorService.getAllSponsors();
+const getSponsorsProfile = catchAsync(async (req: Request, res: Response) => {
+
+  const result = await sponsorService.getSponsorsProfile(req.user.id, req.query.role as string);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     message: "Sponsors retrieved successfully",
@@ -15,5 +16,5 @@ const getAllSponsors = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const sponsorController = {
-  getAllSponsors,
+  getSponsorsProfile,
 };

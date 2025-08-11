@@ -44,14 +44,15 @@ model User {
 
   receiver         Notifications[]   @relation("receiverDetails")
   sender           Notifications[]   @relation("senderDetails")
-  Review           Review[]
   SubscriptionUser SubscriptionUser?
 
   // chat relations
-  chatsSent     Chat[] @relation("SenderRelation")
-  chatsReceived Chat[] @relation("ReceiverRelation")
-  roomsSent     Room[] @relation("SenderRelation")
-  roomsReceived Room[] @relation("ReceiverRelation")
+  chatsSent     Chat[]      @relation("SenderRelation")
+  chatsReceived Chat[]      @relation("ReceiverRelation")
+  roomsSent     Room[]      @relation("SenderRelation")
+  roomsReceived Room[]      @relation("ReceiverRelation")
+  donor         Donor[]
+  Recipient     Recipient[]
 }
 
 model AthleteInfo {
@@ -129,6 +130,7 @@ model Post {
   BrandInfo   BrandInfo? @relation(fields: [brandInfoId], references: [id])
 
   isSponsored Boolean @default(false)
+  donor       Donor[]
 }
 
 model Sports {
@@ -151,18 +153,55 @@ model Like {
 }
 
 model Tier {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   type        TierType
   amount      Float
   description String
-  showProfile Boolean  @default(false)
-  showContent Boolean  @default(false)
-  showBanner  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  showProfile Boolean     @default(false)
+  showContent Boolean     @default(false)
+  showBanner  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  donor       Donor[]
+  Recipient   Recipient[]
 
   @@map("tiers")
+}
+
+model Donor {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String    @db.ObjectId
+  recipientUserId String    @db.ObjectId
+  tierId          String?   @db.ObjectId
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  postId          String?   @db.ObjectId
+  recipientId     String    @db.ObjectId
+  amount          Float?
+  recipient       Recipient @relation(fields: [recipientId], references: [id])
+  tierDetails     Tier?     @relation(fields: [tierId], references: [id])
+  userDetails     User      @relation(fields: [userId], references: [id])
+  posts           Post?     @relation(fields: [postId], references: [id])
+
+  @@map("donors")
+}
+
+model Recipient {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  tierId    String?  @db.ObjectId
+  postId    String   @db.ObjectId
+  amount    Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userDetails User  @relation(fields: [userId], references: [id])
+  tierDetails Tier? @relation(fields: [tierId], references: [id])
+
+  Donor Donor[]
+
+  @@map("recipients")
 }
 
 enum TierType {
@@ -217,60 +256,16 @@ model Otp {
   @@map("otps")
 }
 
-model Service {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  name        String
-  description String
-  price       Float
-  image       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  Review      Review[]
-  Booking     Booking[]
-}
-
-model Booking {
-  id             String      @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String
-  serviceId      String      @db.ObjectId
-  date           DateTime
-  description    String
-  location       String
-  latitude       Float?
-  longitude      Float?
-  isPaid         Boolean     @default(false)
-  paymentId      String?     @db.ObjectId
-  serviceDetails Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  paymentDetails Payment?    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  status         OrderStatus @default(PENDING)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  // Payment        Payment[]
-}
-
-model Review {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @db.ObjectId
-  serviceId      String   @db.ObjectId
-  rating         Float
-  comment        String?
-  serviceDetails Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  userDetails    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
 model Payment {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId        String    @unique @db.ObjectId
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String   @unique @db.ObjectId
   amount        Float
   paymentId     String?
   paymentMethod String?
-  serviceId     String    @unique @db.ObjectId
+  serviceId     String   @unique @db.ObjectId
   // bookDetails Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  Booking       Booking[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Subscription {
@@ -319,12 +314,6 @@ enum Role {
   USER
   WORKER
   ADMIN
-}
-
-enum OrderStatus {
-  PENDING
-  COMPLETED
-  CANCELLED
 }
 
 enum Status {
