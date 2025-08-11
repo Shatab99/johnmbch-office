@@ -94,12 +94,41 @@ const searchProfile = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const deletePost = catchAsync(async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const { id } = req.user;
+  const result = await postService.deletePost(postId, id);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Post deleted successfully",
+    data: result,
+    success: true,
+  });
+});
+
+const editPost = catchAsync(async (req: Request, res: Response) => {
+  const { postId } = req.params;
+  const { id } = req.user;
+  const files = req.files as {
+    [fieldname: string]: Express.MulterS3.File[];
+  };
+  const result = await postService.editPost(postId, id, req.body, files);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Post updated successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const postController = {
   createPost,
   getAllPosts,
   getMyPosts,
+  deletePost,
   searchProfile,
   likePost,
   unlikePost,
-  getProfileDetails
+  getProfileDetails,
+  editPost,
 };

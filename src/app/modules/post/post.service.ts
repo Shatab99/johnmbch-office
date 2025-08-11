@@ -673,6 +673,51 @@ const searchProfile = async (query: any) => {
   return result;
 };
 
+const deletePost = async (postId: string, userId: string) => {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new ApiError(StatusCodes.NOT_FOUND, "Post not found");
+
+  if (post.userId !== userId) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You are not allowed to delete this post"
+    );
+  }
+
+  await prisma.post.delete({ where: { id: postId } });
+  return "Post deleted successfully";
+};
+
+const editPost = async (
+  postId: string,
+  userId: string,
+  updateData: any,
+  files: any
+) => {
+  const video = (await getFileUrl(files.video?.[0])) || null;
+  const image = files.image?.[0]?.location || null;
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new ApiError(StatusCodes.NOT_FOUND, "Post not found");
+
+  if (post.userId !== userId) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You are not allowed to edit this post"
+    );
+  }
+
+  const updatedPost = await prisma.post.update({
+    where: { id: postId },
+    data: {
+      ...updateData,
+      video: video ? video : post.video,
+      image: image ? image : post.image,
+    },
+  });
+
+  return updatedPost;
+};
+
 export const postService = {
   createPostInDb,
   getAllPostsFromDb,
@@ -681,4 +726,6 @@ export const postService = {
   getMyPosts,
   unlikePost,
   searchProfile,
+  deletePost,
+  editPost,
 };

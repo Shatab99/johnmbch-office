@@ -29,12 +29,21 @@ router.get("/my-posts", auth(Role.USER), postController.getMyPosts);
 
 router.post("/like-post/:postId", auth(Role.USER), postController.likePost);
 router.post("/unlike-post/:postId", auth(Role.USER), postController.unlikePost);
-router.get(
-  "/search-profile",
+router.get("/search-profile", auth(Role.USER), postController.searchProfile);
+
+router.delete(
+  "/delete-post/:postId",
   auth(Role.USER),
-  postController.searchProfile
+  postController.deletePost
 );
 
-
+router.put(
+  "/edit-post/:postId",
+  fileUploader.uploadUniversal,
+  auth(Role.USER),
+  parseBodyMiddleware,
+  validateRequest(PostValidation.createPostValidation),
+  postController.editPost
+);
 
 export const postRoutes = router;
