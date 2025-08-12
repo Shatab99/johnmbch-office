@@ -26,11 +26,18 @@ route.delete(
 
 route.post(
   "/join-tier",
-   auth(Role.USER),
-   fileUploader.uploadUniversal,
-   parseBodyMiddleware,
+  auth(Role.USER),
+  fileUploader.uploadUniversal,
+  parseBodyMiddleware,
   validateRequest(PaymentValidation.joinTierValidation),
   paymentController.joinTierController
+);
+
+route.post(
+  "/quick-support",
+  auth(Role.USER),
+  validateRequest(PaymentValidation.quickSupportValidation),
+  paymentController.quickSupport
 );
 
 export const paymentRoutes = route;

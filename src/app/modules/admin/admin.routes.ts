@@ -4,6 +4,7 @@ import auth from "../../middleware/auth";
 import { Role } from "@prisma/client";
 import validateRequest from "../../middleware/validateRequest";
 import { adminValidation } from "./admin.validation";
+import { dashboardController } from "./dashboard/dashboard.controller";
 
 const router = Router();
 
@@ -37,5 +38,15 @@ router.delete(
   auth(Role.ADMIN),
   adminController.deleteSports
 );
+
+//--------------------------Analytics Part -----------------------------
+
+router.get(
+  "/dashboard/user-stat",
+  auth(Role.ADMIN),
+  dashboardController.userStat
+);
+
+
 
 export const adminRoutes = router;

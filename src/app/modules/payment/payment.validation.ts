@@ -13,7 +13,14 @@ const joinTierValidation = z.object({
   content: z.string().optional(),
 });
 
+
+const quickSupportValidation = z.object({
+  amount: z.number().min(1, "Amount must be greater than 0"),
+  providerId: z.string().min(1, "Provider id is required"),
+});
+
 export const PaymentValidation = {
   createPaymentValidation,
   joinTierValidation,
+  quickSupportValidation,
 };

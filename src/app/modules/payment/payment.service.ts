@@ -434,6 +434,19 @@ const joinTier = async (userId: string, body: any, files: any) => {
     },
   });
 
+  // Make a transaction history
+
+  await prisma.transactions.create({
+    data: {
+      senderId: userId,
+      recipientId: providerId,
+      amount: tier.amount,
+      earningType: "SPONSOR",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
   const message = `Successfully ${
     tier.type === "BRAND" ? "sponsored" : "supported"
   } tier on ${
@@ -443,6 +456,32 @@ const joinTier = async (userId: string, body: any, files: any) => {
   } profile`;
 
   return message;
+};
+
+const quickSupport = async (
+  amount: number,
+  providerId: string,
+  userId: string
+) => {
+  const paymentdata = {
+    providerId,
+    paymentMethodId: "card",
+    amount: amount,
+    paymentMethod: "usd",
+  };
+
+  await splitPaymentFromStripe(paymentdata);
+
+  await prisma.transactions.create({
+    data: {
+      senderId: userId,
+      recipientId: providerId,
+      amount: amount,
+      earningType: "QUICKSUPPORT",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
 };
 
 export const paymentService = {
@@ -456,4 +495,5 @@ export const paymentService = {
   subscribeToPlanFromStripe,
   cancelSubscriptionFromStripe,
   joinTier,
+  quickSupport,
 };

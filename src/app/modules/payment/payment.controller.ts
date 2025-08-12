@@ -86,6 +86,19 @@ const joinTierController = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const quickSupport = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const { amount, providerId } = req.body;
+
+  const result = await paymentService.quickSupport(amount, providerId, userId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Quick support payment processed successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const paymentController = {
   // createPaymentController,
   saveCardController,
@@ -93,4 +106,5 @@ export const paymentController = {
   deleteCardController,
   getTiersController,
   joinTierController,
+  quickSupport,
 };

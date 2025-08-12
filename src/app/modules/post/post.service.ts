@@ -335,7 +335,7 @@ const getProfileDetailsFromDb = async (
       brandInfoId,
       BrandInfo,
       likes,
-      ...postData
+      ...restPostData
     } = post;
 
     const profileData =
@@ -400,8 +400,7 @@ const getProfileDetailsFromDb = async (
 
     return {
       profile: showSponsoredPosts === "true" ? brandProfile : profileData,
-      postData,
-      likes: likesData,
+      postData: { ...restPostData, likes: likesData },
     };
   });
 
@@ -490,7 +489,7 @@ const getMyPosts = async (userId: string, query: any) => {
       brandInfoId,
       BrandInfo,
       likes,
-      ...postData
+      ...restPostData
     } = post;
 
     const profileData =
@@ -545,8 +544,7 @@ const getMyPosts = async (userId: string, query: any) => {
 
     return {
       profile: showSponsoredPosts === "true" ? brandProfile : profileData,
-      postData,
-      likes: likeData,
+      postData: { ...restPostData, likes: likeData },
     };
   });
 

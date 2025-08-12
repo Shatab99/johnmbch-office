@@ -253,12 +253,53 @@ const getMyProfile = async (id: string) => {
         : result.profileRole === "BRAND"
         ? "Supporter"
         : undefined,
+    bio:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.bio
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.bio
+        : null,
+    club:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.clubName
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.clubName
+        : null,
+    position:
+      result.profileRole === "ATHLETE" ? result.AthleteInfo?.position : null,
+    country:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.country
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.country
+        : result.profileRole === "BRAND"
+        ? result.BrandInfo?.country
+        : null,
+    city:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.city
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.city
+        : result.profileRole === "BRAND"
+        ? result.BrandInfo?.city
+        : null,
+    nidPhoto:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.passportOrNidImg
+        : null,
+    selfiePhoto:
+      result.profileRole === "ATHLETE" ? result.AthleteInfo?.selfieImage : null,
+    lincensePhoto:
+      result.profileRole === "CLUB" ? result.ClubInfo?.licenseImage : null,
+    textCertificate:
+      result.profileRole === "CLUB" ? result.ClubInfo?.certificateImage : null,
   };
 
   const shapedResult = {
     id: result.id,
     email: result.email,
     role: result.role,
+    profileRole: result.profileRole,
     isProfileUpdated: result.profileRole ? true : false,
     profile,
   };

@@ -47,12 +47,14 @@ model User {
   SubscriptionUser SubscriptionUser?
 
   // chat relations
-  chatsSent     Chat[]      @relation("SenderRelation")
-  chatsReceived Chat[]      @relation("ReceiverRelation")
-  roomsSent     Room[]      @relation("SenderRelation")
-  roomsReceived Room[]      @relation("ReceiverRelation")
-  donor         Donor[]
-  Recipient     Recipient[]
+  chatsSent            Chat[]         @relation("SenderRelation")
+  chatsReceived        Chat[]         @relation("ReceiverRelation")
+  roomsSent            Room[]         @relation("SenderRelation")
+  roomsReceived        Room[]         @relation("ReceiverRelation")
+  donor                Donor[]
+  Recipient            Recipient[]
+  transactionSender    transactions[] @relation("TransactionSender")
+  transactionRecipient transactions[] @relation("TransactionRecipient")
 }
 
 model AthleteInfo {
@@ -106,6 +108,24 @@ model BrandInfo {
   updatedAt DateTime @updatedAt
   User      User[]
   post      Post[]
+}
+
+model transactions {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  senderId      String      @db.ObjectId
+  recipientId String      @db.ObjectId
+  earningType EarningType
+  amount      Float
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  User        User        @relation("TransactionSender", fields: [senderId], references: [id])
+  Recipient   User        @relation("TransactionRecipient", fields: [recipientId], references: [id])
+}
+
+enum EarningType {
+  SPONSOR
+  SUPPORT
+  QUICKSUPPORT
 }
 
 model Post {
