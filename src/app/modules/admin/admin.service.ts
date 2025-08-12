@@ -21,6 +21,9 @@ const getAllTiers = async (query: any) => {
     where: {
       type: type ? { equals: type.toUpperCase() } : undefined,
     },
+    orderBy: {
+      amount: "asc",
+    },
   });
 
   const result = tiers.map((tier) => {
