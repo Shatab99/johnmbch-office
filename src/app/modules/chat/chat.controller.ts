@@ -26,8 +26,8 @@ const fetchChats = catchAsync(async (req, res) => {
 });
 
 const getInboxPreview = catchAsync(async (req, res) => {
-  const userId = req.user.id; // Assuming user ID is stored in req.user
-  const result = await chatService.getInboxPreview(userId);
+  const {id} = req.user;
+  const result = await chatService.getInboxPreview(id);
   sendResponse(res, {
     statusCode: 200,
     success: true,

@@ -48,7 +48,7 @@ const createUserIntoDB = async (payload: User) => {
   const brandInfo = await prisma.brandInfo.create({
     data: { userId: result.id },
   });
-  
+
   await prisma.user.update({
     where: { id: result.id },
     data: {
@@ -218,17 +218,52 @@ const getMyProfile = async (id: string) => {
     where: {
       id,
     },
-    select: {
-      id: true,
-      email: true,
-      role: true,
-      coverImage: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
+      AthleteInfo: true,
+      ClubInfo: true,
+      BrandInfo: true,
     },
   });
 
-  return result;
+  if (!result) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+  const profile = {
+    name:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.fullName
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.clubName
+        : result.profileRole === "BRAND"
+        ? result.BrandInfo?.brandName
+        : undefined,
+
+    profileImage:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.profileImage
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.logoImage
+        : result.profileRole === "BRAND"
+        ? result.BrandInfo?.logoImage
+        : undefined,
+    sportName:
+      result.profileRole === "ATHLETE"
+        ? result.AthleteInfo?.sportName
+        : result.profileRole === "CLUB"
+        ? result.ClubInfo?.sportName
+        : result.profileRole === "BRAND"
+        ? "Supporter"
+        : undefined,
+  };
+
+  const shapedResult = {
+    id: result.id,
+    email: result.email,
+    role: result.role,
+    isProfileUpdated: result.profileRole ? true : false,
+    profile,
+  };
+
+  return shapedResult;
 };
 
 const sendCodeBeforeUpdate = async (id: string, email: string) => {

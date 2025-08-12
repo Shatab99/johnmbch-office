@@ -116,7 +116,7 @@ model Post {
   video       String?
   userDetails User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   likes       Like[]
-  shares      String[] @default([])
+  shareLink   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

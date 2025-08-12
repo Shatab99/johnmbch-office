@@ -7,7 +7,7 @@ import { authService } from "./auth.service";
 import { decode } from "jsonwebtoken";
 
 const logInUserController = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body
+  const body = req.body;
   const result = await authService.logInFromDB(body);
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -29,10 +29,9 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const forgetPasswordController = catchAsync(
   async (req: Request, res: Response) => {
-    const body = req.body
+    const body = req.body;
     const result = await authService.forgetPassword(body);
     sendResponse(res, {
       statusCode: StatusCodes.OK,
@@ -43,18 +42,18 @@ const forgetPasswordController = catchAsync(
   }
 );
 
-
-const resetOtpVerifyController = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body;
-  const result = await authService.resetOtpVerify(body);
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "OTP verified successfully",
-    data: result,
-  });
-})
-
+const resetOtpVerifyController = catchAsync(
+  async (req: Request, res: Response) => {
+    const body = req.body;
+    const result = await authService.resetOtpVerify(body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "OTP verified successfully",
+      data: result,
+    });
+  }
+);
 
 const resendOtpController = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
@@ -67,19 +66,32 @@ const resendOtpController = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const socialLoginController = catchAsync(
+  async (req: Request, res: Response) => {
+    const body = req.body;
+    const result = await authService.socialLogin(body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "User login successfully",
+      data: result,
+    });
+  }
+);
 
-const socialLoginController = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body;
-  const result = await authService.socialLogin(body);
-  sendResponse(res, {statusCode : StatusCodes.OK, success : true, message : "User login successfully", data : result});
-})
+const resetPasswordController = catchAsync(
+  async (req: Request, res: Response) => {
+    const body = req.body;
 
-const resetPasswordController = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body;
-
-  const result = await authService.resetPassword(body);
-  sendResponse(res, {statusCode : StatusCodes.OK, success : true, message : "User login successfully", data : result});
-})
+    const result = await authService.resetPassword(body);
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "User password has been reset successfully",
+      data: result,
+    });
+  }
+);
 
 export const authController = {
   logInUserController,
@@ -88,5 +100,5 @@ export const authController = {
   resendOtpController,
   socialLoginController,
   resetOtpVerifyController,
-  resetPasswordController
+  resetPasswordController,
 };

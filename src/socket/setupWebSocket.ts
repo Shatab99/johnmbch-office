@@ -11,7 +11,7 @@ interface ExtendedWebSocket extends WebSocket {
 
 const ONLINE_USERS_KEY = "online_users";
 export const onlineUsers = new Set<string>();
-const userSockets = new Map<string, ExtendedWebSocket>();
+export const userSockets = new Map<string, ExtendedWebSocket>();
 
 export async function setupWebSocket(server: Server) {
   const wss = new WebSocketServer({ server });

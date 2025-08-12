@@ -156,15 +156,17 @@ const getAllPostsFromDb = async (query: any) => {
     const profileData =
       userDetails.profileRole === "ATHLETE"
         ? {
+            userId: post.userId,
             profileId: AthleteInfo?.id,
-            fullName: AthleteInfo?.fullName,
+            name: AthleteInfo?.fullName,
             profileImage: AthleteInfo?.profileImage,
             sportName: AthleteInfo?.sportName,
           }
         : {
+            userId: post.userId,
             profileId: ClubInfo?.id,
-            clubName: ClubInfo?.clubName,
-            logoImage: ClubInfo?.logoImage,
+            name: ClubInfo?.clubName,
+            profileImage: ClubInfo?.logoImage,
             sportName: ClubInfo?.sportName,
           };
 
@@ -180,21 +182,21 @@ const getAllPostsFromDb = async (query: any) => {
         profileRole === "ATHLETE"
           ? {
               profileId: AthleteInfo?.id,
-              fullName: AthleteInfo?.fullName,
+              name: AthleteInfo?.fullName,
               profileImage: AthleteInfo?.profileImage,
               sportName: AthleteInfo?.sportName,
             }
           : profileRole === "CLUB"
           ? {
               profileId: ClubInfo?.id,
-              clubName: ClubInfo?.clubName,
-              logoImage: ClubInfo?.logoImage,
+              name: ClubInfo?.clubName,
+              profileImage: ClubInfo?.logoImage,
               sportName: ClubInfo?.sportName,
             }
           : {
               profileId: BrandInfo?.id,
-              brandName: BrandInfo?.brandName,
-              logoImage: BrandInfo?.logoImage,
+              name: BrandInfo?.brandName,
+              profileImage: BrandInfo?.logoImage,
               sportName: BrandInfo?.sportName,
             };
 
@@ -363,21 +365,21 @@ const getProfileDetailsFromDb = async (
         profileRole === "ATHLETE"
           ? {
               profileId: AthleteInfo?.id,
-              fullName: AthleteInfo?.fullName,
+              name: AthleteInfo?.fullName,
               profileImage: AthleteInfo?.profileImage,
               sportName: AthleteInfo?.sportName,
             }
           : profileRole === "CLUB"
           ? {
               profileId: ClubInfo?.id,
-              clubName: ClubInfo?.clubName,
-              logoImage: ClubInfo?.logoImage,
+              name: ClubInfo?.clubName,
+              profileImage: ClubInfo?.logoImage,
               sportName: ClubInfo?.sportName,
             }
           : {
               profileId: BrandInfo?.id,
-              brandName: BrandInfo?.brandName,
-              logoImage: BrandInfo?.logoImage,
+              name: BrandInfo?.brandName,
+              profileImage: BrandInfo?.logoImage,
               sportName: BrandInfo?.sportName,
             };
 

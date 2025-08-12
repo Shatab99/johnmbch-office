@@ -1,3 +1,4 @@
+import { userSockets } from "../../../socket/setupWebSocket";
 import { prisma } from "../../../utils/prisma";
 
 // Create or find a room for 1-to-1 chat
@@ -27,14 +28,16 @@ const sendMessage = async (
   message: string,
   images: string[] = []
 ) => {
+  // 1️⃣ Find or create room
   const room = await findOrCreateRoom(senderId, receiverId);
 
+  // 2️⃣ Save the message in DB
   const newMessage = await prisma.chat.create({
     data: {
       senderId,
       receiverId,
       message,
-      images,
+      images: { set: images || [] }, 
       roomId: room.id,
     },
     include: {
@@ -43,8 +46,20 @@ const sendMessage = async (
     },
   });
 
+  // 3️⃣ Send to the receiver if they are online
+  const receiverSocket = userSockets.get(receiverId);
+  if (receiverSocket) {
+    receiverSocket.send(
+      JSON.stringify({
+        event: "message",
+        data: newMessage,
+      })
+    );
+  }
+
   return newMessage;
 };
+
 
 const fetchChats = async (userId: string, receiverId: string) => {
   const room = await prisma.room.findFirst({
@@ -93,12 +108,13 @@ const getInboxPreview = async (userId: string) => {
   });
 
   return rooms.map((room: any) => {
+
     const otherUser = room.senderId === userId ? room.receiver : room.sender;
     const latestMessage = room.chat[0];
 
     return {
       user: {
-        id: otherUser.id,
+        receiverId: otherUser.id,
         name:
           otherUser?.AthleteInfo?.fullName ||
           otherUser?.ClubInfo?.clubName ||
@@ -113,6 +129,7 @@ const getInboxPreview = async (userId: string) => {
       unreadCount: 0,
     };
   });
+
 };
 
 const getOnlineUsers = async (userIds: string[]) => {

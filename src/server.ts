@@ -4,15 +4,17 @@ import { Server } from "http";
 import config from "./config/index";
 import { PrismaConnection } from "./app/DB/PrismaConnection";
 import app from "./app";
-
+import { setupWebSocket } from "./socket/setupWebSocket";
 
 const port = config.port || 5000;
 
 async function main() {
   const server: Server = app.listen(port, () => {
     console.log("Sever is running on port ", port);
-    PrismaConnection()
+    PrismaConnection();
   });
+
+  await setupWebSocket(server);
   const exitHandler = () => {
     if (server) {
       server.close(() => {
