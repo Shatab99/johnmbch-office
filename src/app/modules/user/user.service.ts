@@ -49,12 +49,17 @@ const createUserIntoDB = async (payload: User) => {
     data: { userId: result.id },
   });
 
+  const individualInfo = await prisma.individualInfo.create({
+    data: { userId: result.id },
+  });
+
   await prisma.user.update({
     where: { id: result.id },
     data: {
       athleteInfoId: athleteInfo.id,
       clubInfoId: clubInfo.id,
       brandInfoId: brandInfo.id,
+      individualInfoId: individualInfo.id,
     },
   });
 
@@ -183,6 +188,30 @@ const updateBrandProfile = async (id: string, body: any, image: any) => {
   return result;
 };
 
+const updateIndividualProfile = async (id: string, body: any, image: any) => {
+  const profileImage = image.profileImage;
+
+  const { profileRole, otp, ...data } = body;
+
+  const findUser = await prisma.user.findUnique({ where: { id } });
+  if (!findUser) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+
+  await prisma.user.update({
+    where: { id },
+    data: { profileRole: "INDIVIDUAL" },
+  });
+
+  const result = await prisma.individualInfo.update({
+    where: { userId: id },
+    data: {
+      ...data,
+      profileImage,
+    },
+  });
+
+  return result;
+};
+
 const updateUserIntoDB = async (id: string, body: any, image: any) => {
   const findUser = await prisma.user.findUnique({
     where: {
@@ -209,6 +238,8 @@ const updateUserIntoDB = async (id: string, body: any, image: any) => {
     return updateClubProfile(id, body, image);
   } else if (body.profileRole === "BRAND") {
     return updateBrandProfile(id, body, image);
+  } else if (body.profileRole === "INDIVIDUAL") {
+    return updateIndividualProfile(id, body, image);
   } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid profile role");
   }

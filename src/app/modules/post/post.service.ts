@@ -70,7 +70,7 @@ const createPostInDb = async (postData: any, files: any) => {
   return "Success";
 };
 
-const getAllPostsFromDb = async (query: any) => {
+const getAllPostsFromDb = async (query: any, userIdFromToken: string) => {
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query,
@@ -208,9 +208,14 @@ const getAllPostsFromDb = async (query: any) => {
       };
     });
 
+    const isLiked = likesData.some(
+      (like: any) => like.userId === userIdFromToken
+    );
+
     return {
       postData: { postId: post.id, ...restData, likes: likesData },
-      profileInfo: profileData,
+      profile: profileData,
+      isLiked,
     };
   });
 
@@ -220,7 +225,7 @@ const getAllPostsFromDb = async (query: any) => {
 // get profile details and
 const getProfileDetailsFromDb = async (
   profileUserId: string,
-  userId: string,
+  userIdFromToken: string,
   query: any
 ) => {
   const { showSponsoredPosts, ...restQuery } = query;
@@ -236,7 +241,7 @@ const getProfileDetailsFromDb = async (
     ],
     forcedFilters: {
       userId: profileUserId,
-      isSponsored: showSponsoredPosts === "true" ? true : false,
+      isSponsored: false,
     },
     includes: {
       AthleteInfo: {
@@ -257,6 +262,7 @@ const getProfileDetailsFromDb = async (
       },
       userDetails: {
         select: {
+          id: true,
           profileRole: true,
         },
       },
@@ -302,11 +308,106 @@ const getProfileDetailsFromDb = async (
           logoImage: true,
         },
       },
+      IndividualInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+        },
+      },
+    },
+  });
+
+  const sponsoredPostdata = await dynamicQueryBuilder({
+    model: prisma.post,
+    query: restQuery,
+    searchableFields: [
+      "ClubInfo.clubName",
+      "ClubInfo.sportName",
+      "AthleteInfo.fullName",
+      "AthleteInfo.sportName",
+    ],
+    forcedFilters: {
+      userId: profileUserId,
+      isSponsored: true,
+    },
+    includes: {
+      AthleteInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+          sportName: true,
+        },
+      },
+      ClubInfo: {
+        select: {
+          id: true,
+          clubName: true,
+          logoImage: true,
+          sportName: true,
+        },
+      },
+      userDetails: {
+        select: {
+          id: true,
+          profileRole: true,
+        },
+      },
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          postId: true,
+          User: {
+            select: {
+              profileRole: true,
+              AthleteInfo: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  profileImage: true,
+                  sportName: true,
+                },
+              },
+              ClubInfo: {
+                select: {
+                  id: true,
+                  clubName: true,
+                  logoImage: true,
+                  sportName: true,
+                },
+              },
+              BrandInfo: {
+                select: {
+                  id: true,
+                  brandName: true,
+                  logoImage: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      BrandInfo: {
+        select: {
+          id: true,
+          brandName: true,
+          logoImage: true,
+        },
+      },
+      IndividualInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+        },
+      },
     },
   });
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userIdFromToken },
     include: { AthleteInfo: true, ClubInfo: true },
   });
 
@@ -321,7 +422,9 @@ const getProfileDetailsFromDb = async (
     profileImage: athleteInfo?.profileImage || clubInfo?.logoImage,
     sportName: athleteInfo?.sportName || clubInfo?.sportName,
     coverImage: user?.coverImage,
-    isOwner: userId === athleteInfo?.userId || userId === clubInfo?.userId,
+    isOwner:
+      userIdFromToken === athleteInfo?.userId ||
+      userIdFromToken === clubInfo?.userId,
   };
 
   const result = posts.data.map((post: any) => {
@@ -334,19 +437,24 @@ const getProfileDetailsFromDb = async (
       clubInfoId,
       brandInfoId,
       BrandInfo,
+      IndividualInfo,
+      individualId,
       likes,
+      isSponsored,
       ...restPostData
     } = post;
 
     const profileData =
       userDetails.profileRole === "ATHLETE"
         ? {
+            userId: userDetails.id,
             profileId: AthleteInfo?.id,
             name: AthleteInfo?.fullName,
             profileImage: AthleteInfo?.profileImage,
             sportName: AthleteInfo?.sportName,
           }
         : {
+            userId: userDetails.id,
             profileId: ClubInfo?.id,
             name: ClubInfo?.clubName,
             profileImage: ClubInfo?.logoImage,
@@ -358,7 +466,7 @@ const getProfileDetailsFromDb = async (
         id,
         userId,
         postId,
-        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo },
+        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo, IndividualInfo },
       } = like;
 
       const profileData =
@@ -376,11 +484,18 @@ const getProfileDetailsFromDb = async (
               profileImage: ClubInfo?.logoImage,
               sportName: ClubInfo?.sportName,
             }
-          : {
+          : profileRole === "BRAND"
+          ? {
               profileId: BrandInfo?.id,
               name: BrandInfo?.brandName,
               profileImage: BrandInfo?.logoImage,
               sportName: BrandInfo?.sportName,
+            }
+          : {
+              profileId: IndividualInfo?.id,
+              name: IndividualInfo?.fullName,
+              profileImage: IndividualInfo?.profileImage,
+              sportName: "Supporter",
             };
 
       return {
@@ -391,32 +506,118 @@ const getProfileDetailsFromDb = async (
       };
     });
 
-    const brandProfile = {
-      profileId: BrandInfo?.id,
-      name: BrandInfo?.brandName,
-      profileImage: BrandInfo?.logoImage,
-      sportName: BrandInfo?.sportName,
-    };
+    const isLiked = likesData.some(
+      (like: any) => like.userId === userIdFromToken
+    );
 
     return {
-      profile: showSponsoredPosts === "true" ? brandProfile : profileData,
+      profile: profileData,
       postData: { ...restPostData, likes: likesData },
+      isLiked,
     };
   });
 
-  return { profile, metaData: posts.meta, posts: result };
+  const sponsoredPosts = sponsoredPostdata.data.map((post: any) => {
+    const {
+      id,
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      athleteInfoId,
+      clubInfoId,
+      brandInfoId,
+      BrandInfo,
+      IndividualInfo,
+      likes,
+      isSponsored,
+      ...restPostData
+    } = post;
+
+    const likesData = likes.map((like: any) => {
+      const {
+        id,
+        userId,
+        postId,
+        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo, IndividualInfo },
+      } = like;
+
+      const profileData =
+        profileRole === "ATHLETE"
+          ? {
+              profileId: AthleteInfo?.id,
+              name: AthleteInfo?.fullName,
+              profileImage: AthleteInfo?.profileImage,
+              sportName: AthleteInfo?.sportName,
+            }
+          : profileRole === "CLUB"
+          ? {
+              profileId: ClubInfo?.id,
+              name: ClubInfo?.clubName,
+              profileImage: ClubInfo?.logoImage,
+              sportName: ClubInfo?.sportName,
+            }
+          : profileRole === "BRAND"
+          ? {
+              profileId: BrandInfo?.id,
+              name: BrandInfo?.brandName,
+              profileImage: BrandInfo?.logoImage,
+              sportName: BrandInfo?.sportName,
+            }
+          : {
+              profileId: IndividualInfo?.id,
+              name: IndividualInfo?.fullName,
+              profileImage: IndividualInfo?.profileImage,
+              sportName: "Supporter",
+            };
+
+      return {
+        likeId: id,
+        userId,
+        postId,
+        profileInfo: profileData,
+      };
+    });
+
+    const isLiked = likesData.some(
+      (like: any) => like.userId === userIdFromToken
+    );
+
+    const brandProfile = brandInfoId
+      ? {
+          userId: userDetails.id,
+          profileId: BrandInfo?.id,
+          name: BrandInfo?.brandName,
+          profileImage: BrandInfo?.logoImage,
+          sportName: "Sponsor",
+        }
+      : {
+          userId: userDetails.id,
+          profileId: IndividualInfo?.id,
+          name: IndividualInfo?.fullName,
+          profileImage: IndividualInfo?.profileImage,
+          sportName: "Supporter",
+        };
+
+    return {
+      profile: brandProfile,
+      postData: { ...restPostData, likes: likesData },
+      isLiked,
+    };
+  });
+
+  return { profile, metaData: posts.meta, posts: result, sponsoredPosts };
 };
 
 // const getMyPosts
 
-const getMyPosts = async (userId: string, query: any) => {
+const getMyPosts = async (userIdFromToken: string, query: any) => {
   const { showSponsoredPosts, ...restQuery } = query;
   const posts = await dynamicQueryBuilder({
     model: prisma.post,
     query: restQuery,
     forcedFilters: {
-      userId,
-      isSponsored: showSponsoredPosts === "true" ? true : false,
+      userId: userIdFromToken,
+      isSponsored: false,
     },
     includes: {
       AthleteInfo: {
@@ -457,6 +658,9 @@ const getMyPosts = async (userId: string, query: any) => {
               BrandInfo: {
                 select: { id: true, brandName: true, logoImage: true },
               },
+              IndividualInfo: {
+                select: { id: true, fullName: true, profileImage: true },
+              },
             },
           },
         },
@@ -468,11 +672,88 @@ const getMyPosts = async (userId: string, query: any) => {
           logoImage: true,
         },
       },
+      IndividualInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+        },
+      },
+    },
+  });
+
+  const sponsoredPostdata = await dynamicQueryBuilder({
+    model: prisma.post,
+    query: restQuery,
+    forcedFilters: {
+      userId: userIdFromToken,
+      isSponsored: true,
+    },
+    includes: {
+      AthleteInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+          sportName: true,
+        },
+      },
+      ClubInfo: {
+        select: {
+          id: true,
+          clubName: true,
+          logoImage: true,
+          sportName: true,
+        },
+      },
+      userDetails: {
+        select: {
+          profileRole: true,
+        },
+      },
+      likes: {
+        select: {
+          id: true,
+          userId: true,
+          postId: true,
+          User: {
+            select: {
+              profileRole: true,
+              AthleteInfo: {
+                select: { id: true, fullName: true, profileImage: true },
+              },
+              ClubInfo: {
+                select: { id: true, clubName: true, logoImage: true },
+              },
+              BrandInfo: {
+                select: { id: true, brandName: true, logoImage: true },
+              },
+              IndividualInfo: {
+                select: { id: true, fullName: true, profileImage: true },
+              },
+            },
+          },
+        },
+      },
+      BrandInfo: {
+        select: {
+          id: true,
+          brandName: true,
+          logoImage: true,
+        },
+      },
+      IndividualInfo: {
+        select: {
+          id: true,
+          fullName: true,
+          profileImage: true,
+        },
+      },
     },
   });
 
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: userIdFromToken },
     include: { AthleteInfo: true, ClubInfo: true },
   });
 
@@ -488,6 +769,7 @@ const getMyPosts = async (userId: string, query: any) => {
       clubInfoId,
       brandInfoId,
       BrandInfo,
+      IndividualInfo,
       likes,
       ...restPostData
     } = post;
@@ -495,24 +777,37 @@ const getMyPosts = async (userId: string, query: any) => {
     const profileData =
       userDetails.profileRole === "ATHLETE"
         ? {
+            userId: userDetails.id,
             profileId: AthleteInfo?.id,
             name: AthleteInfo?.fullName,
             profileImage: AthleteInfo?.profileImage,
             sportName: AthleteInfo?.sportName,
           }
         : {
+            userId: userDetails.id,
             profileId: ClubInfo?.id,
             name: ClubInfo?.clubName,
             profileImage: ClubInfo?.logoImage,
             sportName: ClubInfo?.sportName,
           };
 
-    const brandProfile = {
-      profileId: BrandInfo?.id,
-      name: BrandInfo?.brandName,
-      profileImage: BrandInfo?.logoImage,
-      sportName: BrandInfo?.sportName,
-    };
+    const brandProfile =
+      userDetails.profileRole === "BRAND"
+        ? {
+            userId: userDetails.id,
+            profileId: BrandInfo?.id,
+            name: BrandInfo?.brandName,
+            profileImage: BrandInfo?.logoImage,
+            sportName: "Sponsor",
+          }
+        : {
+            userId: userDetails.id,
+            profileId: IndividualInfo?.id,
+            name: IndividualInfo?.fullName || "Sponsor",
+            profileImage: IndividualInfo?.profileImage,
+            sportName: "Supporter",
+          };
+
     const likeData = post.likes.map((like: any) => {
       return {
         id: like.id,
@@ -525,26 +820,135 @@ const getMyPosts = async (userId: string, query: any) => {
               ? like.User.AthleteInfo.fullName
               : like.User.profileRole === "CLUB"
               ? like.User.ClubInfo.clubName
-              : like.User.BrandInfo.brandName,
+              : like.User.profileRole === "BRAND"
+              ? like.User.BrandInfo.brandName
+              : like.User.IndividualInfo?.fullName || "Sponsor",
           profileImage:
             like.User.profileRole === "ATHLETE"
               ? like.User.AthleteInfo.profileImage
               : like.User.profileRole === "CLUB"
               ? like.User.ClubInfo.logoImage
-              : like.User.BrandInfo.logoImage,
+              : like.User.profileRole === "BRAND"
+              ? like.User.BrandInfo.logoImage
+              : like.User.IndividualInfo?.profileImage,
           sportName:
             like.User.profileRole === "ATHLETE"
               ? like.User.AthleteInfo.sportName
               : like.User.profileRole === "CLUB"
               ? like.User.ClubInfo.sportName
-              : "Sponsor",
+              : like.User.profileRole === "BRAND"
+              ? "Sponsor"
+              : "Supporter",
         },
       };
     });
 
+    const isLiked = likeData.some(
+      (like: any) => like.userId === userIdFromToken
+    );
+
     return {
       profile: showSponsoredPosts === "true" ? brandProfile : profileData,
       postData: { ...restPostData, likes: likeData },
+      isLiked,
+    };
+  });
+
+  const sponsoredPosts = sponsoredPostdata.data.map((post: any) => {
+    const {
+      id,
+      AthleteInfo,
+      ClubInfo,
+      userDetails,
+      athleteInfoId,
+      clubInfoId,
+      brandInfoId,
+      BrandInfo,
+      IndividualInfo,
+      individualId,
+      isSponsored,
+      likes,
+      ...restPostData
+    } = post;
+
+    const profileData =
+      userDetails.profileRole === "ATHLETE"
+        ? {
+            userId: userDetails.id,
+            profileId: AthleteInfo?.id,
+            name: AthleteInfo?.fullName,
+            profileImage: AthleteInfo?.profileImage,
+            sportName: AthleteInfo?.sportName,
+          }
+        : {
+            userId: userDetails.id,
+            profileId: ClubInfo?.id,
+            name: ClubInfo?.clubName,
+            profileImage: ClubInfo?.logoImage,
+            sportName: ClubInfo?.sportName,
+          };
+
+    const brandProfile =
+      isSponsored && brandInfoId
+        ? {
+            userId: userDetails.id,
+            profileId: BrandInfo?.id,
+            name: BrandInfo?.brandName,
+            profileImage: BrandInfo?.logoImage,
+            sportName: "Sponsor",
+          }
+        : isSponsored && individualId
+        ? {
+            userId: userDetails.id,
+            profileId: IndividualInfo?.id,
+            name: IndividualInfo?.fullName || "Sponsor",
+            profileImage: IndividualInfo?.profileImage,
+            sportName: "Supporter",
+          }
+        : null;
+
+    const likeData = post.likes.map((like: any) => {
+      return {
+        id: like.id,
+        userId: like.userId,
+        postId: like.postId,
+        profile: {
+          id: like.User.id,
+          name:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.fullName
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.clubName
+              : like.User.profileRole === "BRAND"
+              ? like.User.BrandInfo.brandName
+              : like.User.IndividualInfo?.fullName || "Sponsor",
+          profileImage:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.profileImage
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.logoImage
+              : like.User.profileRole === "BRAND"
+              ? like.User.BrandInfo.logoImage
+              : like.User.IndividualInfo?.profileImage,
+          sportName:
+            like.User.profileRole === "ATHLETE"
+              ? like.User.AthleteInfo.sportName
+              : like.User.profileRole === "CLUB"
+              ? like.User.ClubInfo.sportName
+              : like.User.profileRole === "BRAND"
+              ? "Sponsor"
+              : "Supporter",
+        },
+      };
+    });
+
+    const isLiked = likeData.some(
+      (like: any) => like.userId === userIdFromToken
+    );
+    return {
+      profile: isSponsored ? brandProfile : profileData,
+      postData: { ...restPostData, likes: likeData },
+      isLiked,
     };
   });
 
@@ -558,10 +962,10 @@ const getMyPosts = async (userId: string, query: any) => {
     profileImage: user?.AthleteInfo?.profileImage || user?.ClubInfo?.logoImage,
     sportName: user?.AthleteInfo?.sportName || user?.ClubInfo?.sportName,
     coverImage: user?.coverImage,
-    isOwner: userId === athleteInfo?.userId || userId === clubInfo?.userId,
+    isOwner:  userIdFromToken === athleteInfo?.userId || userIdFromToken === clubInfo?.userId,
   };
 
-  return { profile, metadata: posts.meta, posts: result };
+  return { profile, metadata: posts.meta, posts: result, sponsoredPosts };
 };
 
 const likePost = async (postId: string, userId: string) => {

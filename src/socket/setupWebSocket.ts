@@ -59,10 +59,6 @@ export async function setupWebSocket(server: Server) {
 
             userSockets.set(id, ws);
 
-            // broadcastToAll(wss, {
-            //   event: "userStatus",
-            //   data: { userId: id, isOnline: true },
-            // });
             break;
           }
 

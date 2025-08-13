@@ -62,15 +62,23 @@ const updateUserController = catchAsync(async (req: Request, res: Response) => {
     images = {
       logoImage: files.logoImage?.[0]?.location,
     };
+  } else if (role === "INDIVIDUAL") {
+    images = {
+      profileImage: files.profileImage?.[0]?.location,
+    };
   } else {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid profile role");
   }
-  if (body.profileRole === "ATHLETE")
+
+  
+  if (role === "ATHLETE")
     validateRequest(UserValidation.updateAtheleteProfileValidation);
-  else if (body.profileRole === "CLUB")
+  else if (role === "CLUB")
     validateRequest(UserValidation.updateClubProfileValidation);
-  else if (body.profileRole === "BRAND")
+  else if (role === "BRAND")
     validateRequest(UserValidation.updatebrandProfileValidation);
+  else if (role === "INDIVIDUAL")
+    validateRequest(UserValidation.updateIndividualProfileValidation);
 
   const result = await userServices.updateUserIntoDB(id, body, images);
   sendResponse(res, {

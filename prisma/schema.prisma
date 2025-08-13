@@ -47,14 +47,16 @@ model User {
   SubscriptionUser SubscriptionUser?
 
   // chat relations
-  chatsSent            Chat[]         @relation("SenderRelation")
-  chatsReceived        Chat[]         @relation("ReceiverRelation")
-  roomsSent            Room[]         @relation("SenderRelation")
-  roomsReceived        Room[]         @relation("ReceiverRelation")
+  chatsSent            Chat[]          @relation("SenderRelation")
+  chatsReceived        Chat[]          @relation("ReceiverRelation")
+  roomsSent            Room[]          @relation("SenderRelation")
+  roomsReceived        Room[]          @relation("ReceiverRelation")
   donor                Donor[]
   Recipient            Recipient[]
-  transactionSender    transactions[] @relation("TransactionSender")
-  transactionRecipient transactions[] @relation("TransactionRecipient")
+  transactionSender    transactions[]  @relation("TransactionSender")
+  transactionRecipient transactions[]  @relation("TransactionRecipient")
+  IndividualInfo       IndividualInfo? @relation(fields: [individualInfoId], references: [id])
+  individualInfoId     String?         @db.ObjectId
 }
 
 model AthleteInfo {
@@ -110,9 +112,22 @@ model BrandInfo {
   post      Post[]
 }
 
+model IndividualInfo {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @unique @db.ObjectId
+  fullName     String?
+  profileImage String?
+  country      String?
+  city         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  User         User[]
+  post         Post[]
+}
+
 model transactions {
   id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  senderId      String      @db.ObjectId
+  senderId    String      @db.ObjectId
   recipientId String      @db.ObjectId
   earningType EarningType
   amount      Float
@@ -149,8 +164,10 @@ model Post {
   brandInfoId String?    @db.ObjectId
   BrandInfo   BrandInfo? @relation(fields: [brandInfoId], references: [id])
 
-  isSponsored Boolean @default(false)
-  donor       Donor[]
+  isSponsored      Boolean         @default(false)
+  donor            Donor[]
+  IndividualInfo   IndividualInfo? @relation(fields: [individualInfoId], references: [id])
+  individualInfoId String?         @db.ObjectId
 }
 
 model Sports {
@@ -233,6 +250,7 @@ enum ProfileRole {
   CLUB
   BRAND
   ATHLETE
+  INDIVIDUAL
 }
 
 model Chat {

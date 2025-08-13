@@ -6,6 +6,7 @@ import { chatRoutes } from "../modules/chat/chat.route";
 import { adminRoutes } from "../modules/admin/admin.routes";
 import { paymentRoutes } from "../modules/payment/payment.routes";
 import { sponsorRoutes } from "../modules/sponsors/sponsor.routes";
+import { uploadFileRoutes } from "../modules/uploadFile/uploadFile.routes";
 // import { foodRoutes } from "../modules/foods/foods.Routes"
 // import { locationRoutes } from "../modules/location/location.Routes"
 
@@ -38,6 +39,10 @@ const routes = [
   {
     path: "/sponsors",
     component: sponsorRoutes,
+  },
+  {
+    path: "/upload",
+    component: uploadFileRoutes,
   },
 ];
 

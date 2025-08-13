@@ -23,7 +23,7 @@ const updateAtheleteProfileValidation = z.object({
   position: z.string(),
   country: z.string(),
   city: z.string(),
-  otp: z.string(),
+  // otp: z.string(),
 });
 
 const updateClubProfileValidation = z.object({
@@ -32,10 +32,10 @@ const updateClubProfileValidation = z.object({
   bio: z.string(),
   country: z.string(),
   city: z.string(),
-  sportName: z.string(), 
+  sportName: z.string(),
   members: z.number().min(0, "Members must be a positive number"),
   foundedYear: z.string().min(4, "Founded year is required"),
-  otp: z.string(),
+  // otp: z.string(),
 });
 
 const updatebrandProfileValidation = z.object({
@@ -43,10 +43,16 @@ const updatebrandProfileValidation = z.object({
   brandName: z.string().min(1, "Brand name is required"),
   country: z.string(),
   city: z.string(),
-  otp: z.string(),
+  // otp: z.string(),
 });
 
-
+const updateIndividualProfileValidation = z.object({
+  profileRole: z.string(),
+  fullName: z.string().min(1, "Full name is required"),
+  country: z.string(),
+  city: z.string(),
+  // otp: z.string(),
+});
 
 export const UserValidation = {
   createValidation,
@@ -54,4 +60,5 @@ export const UserValidation = {
   updateAtheleteProfileValidation,
   updateClubProfileValidation,
   updatebrandProfileValidation,
+  updateIndividualProfileValidation,
 };

@@ -25,22 +25,6 @@ const s3Storage = multerS3({
 });
 
 const imageFilter = (req: any, file: any, cb: any) => {
-  const allowedMimes = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "video/mp4",
-    "video/quicktime", // for .mov files
-    "video/x-msvideo", // for .avi files
-    "video/x-matroska", // for .mkv files
-  ];
-
-  if (!allowedMimes.includes(file.mimetype)) {
-    return cb(
-      new Error("Invalid file type. Only PNG, JPG, and JPEG are allowed."),
-      false
-    );
-  }
   cb(null, true);
 };
 
@@ -80,6 +64,7 @@ const uploadUniversal = upload.fields([
   { name: "image", maxCount: 1 }, // For single image upload
   { name: "video", maxCount: 1 }, // For single video upload
   { name: "banner", maxCount: 1 },
+  { name: "images", maxCount: 10 },
 ]);
 
 // Multiple image uploads
