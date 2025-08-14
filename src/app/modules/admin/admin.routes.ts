@@ -47,6 +47,22 @@ router.get(
   dashboardController.userStat
 );
 
+router.get(
+  "/dashboard/earning-stat",
+  auth(Role.ADMIN),
+  dashboardController.earningStat
+);
 
+router.get(
+  "/dashboard/monthly-revenue-graph/:year",
+  auth(Role.ADMIN),
+  dashboardController.getMonthlyRevenueGraph
+);
+
+router.get(
+  "/dashboard/revenue-stat",
+  auth(Role.ADMIN),
+  dashboardController.revenueStat
+);
 
 export const adminRoutes = router;

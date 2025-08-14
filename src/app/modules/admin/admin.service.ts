@@ -26,24 +26,33 @@ const getAllTiers = async (query: any) => {
     },
   });
 
-  const result = tiers.map((tier) => {
-    return {
-      id: tier.id,
-      title: tier.title,
-      amount: tier.amount,
-      description: tier.description,
-      type: tier.type,
-      features: [
-        tier.showProfile ? "Your profile will be shown." : "",
-        tier.showContent
-          ? "You will able to upload write about your company to promote your brand."
-          : null,
-        tier.showBanner
-          ? "You will able to upload a banner to promote your brand."
-          : null,
-      ].filter(Boolean),
-    };
-  });
+  const result = await Promise.all(
+    tiers.map(async (tier) => {
+      const transactionCount = await prisma.transactions.count({
+        where: {
+          tierId: tier.id,
+        },
+      });
+
+      return {
+        tierId: tier.id,
+        title: tier.title,
+        amount: tier.amount,
+        description: tier.description,
+        type: tier.type,
+        features: [
+          tier.showProfile ? "Your profile will be shown." : "",
+          tier.showContent
+            ? "You will able to upload write about your company to promote your brand."
+            : null,
+          tier.showBanner
+            ? "You will able to upload a banner to promote your brand."
+            : null,
+        ].filter(Boolean),
+        subscribed: transactionCount,
+      };
+    })
+  );
 
   return result;
 };

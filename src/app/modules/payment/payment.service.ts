@@ -442,8 +442,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
       recipientId: providerId,
       amount: tier.amount,
       earningType: "SPONSOR",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      tierId: tier.id,
     },
   });
 
@@ -461,11 +460,12 @@ const joinTier = async (userId: string, body: any, files: any) => {
 const quickSupport = async (
   amount: number,
   providerId: string,
+  paymentMethodId: string,
   userId: string
 ) => {
   const paymentdata = {
     providerId,
-    paymentMethodId: "card",
+    paymentMethodId,
     amount: amount,
     paymentMethod: "usd",
   };

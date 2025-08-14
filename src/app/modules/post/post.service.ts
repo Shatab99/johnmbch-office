@@ -407,7 +407,7 @@ const getProfileDetailsFromDb = async (
   });
 
   const user = await prisma.user.findUnique({
-    where: { id: userIdFromToken },
+    where: { id: profileUserId },
     include: { AthleteInfo: true, ClubInfo: true },
   });
 
@@ -422,6 +422,13 @@ const getProfileDetailsFromDb = async (
     profileImage: athleteInfo?.profileImage || clubInfo?.logoImage,
     sportName: athleteInfo?.sportName || clubInfo?.sportName,
     coverImage: user?.coverImage,
+    bio: athleteInfo?.bio || clubInfo?.bio,
+    clubName: athleteInfo?.clubName,
+    member: clubInfo?.members,
+    position: athleteInfo?.position,
+    founded: clubInfo?.foundedYear,
+    city: athleteInfo?.city || clubInfo?.city,
+    country: athleteInfo?.country || clubInfo?.country,
     isOwner:
       userIdFromToken === athleteInfo?.userId ||
       userIdFromToken === clubInfo?.userId,
@@ -962,7 +969,16 @@ const getMyPosts = async (userIdFromToken: string, query: any) => {
     profileImage: user?.AthleteInfo?.profileImage || user?.ClubInfo?.logoImage,
     sportName: user?.AthleteInfo?.sportName || user?.ClubInfo?.sportName,
     coverImage: user?.coverImage,
-    isOwner:  userIdFromToken === athleteInfo?.userId || userIdFromToken === clubInfo?.userId,
+     bio: athleteInfo?.bio || clubInfo?.bio,
+    clubName: athleteInfo?.clubName,
+    member: clubInfo?.members,
+    position: athleteInfo?.position,
+    founded: clubInfo?.foundedYear,
+    city: athleteInfo?.city || clubInfo?.city,
+    country: athleteInfo?.country || clubInfo?.country,
+    isOwner:
+      userIdFromToken === athleteInfo?.userId ||
+      userIdFromToken === clubInfo?.userId,
   };
 
   return { profile, metadata: posts.meta, posts: result, sponsoredPosts };

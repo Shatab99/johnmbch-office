@@ -126,15 +126,21 @@ model IndividualInfo {
 }
 
 model transactions {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
-  senderId    String      @db.ObjectId
-  recipientId String      @db.ObjectId
-  earningType EarningType
-  amount      Float
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  User        User        @relation("TransactionSender", fields: [senderId], references: [id])
-  Recipient   User        @relation("TransactionRecipient", fields: [recipientId], references: [id])
+  id                    String      @id @default(auto()) @map("_id") @db.ObjectId
+  senderId              String      @db.ObjectId
+  recipientId           String      @db.ObjectId
+  earningType           EarningType
+  amount                Float
+  tierId                String?      @db.ObjectId
+  stripePaymentIntentId String? // add
+  stripeChargeId        String? // add
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  User                  User        @relation("TransactionSender", fields: [senderId], references: [id])
+  Recipient             User        @relation("TransactionRecipient", fields: [recipientId], references: [id])
+
+  @@index([stripePaymentIntentId])
+  @@index([stripeChargeId])
 }
 
 enum EarningType {
