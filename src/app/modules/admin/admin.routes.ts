@@ -9,6 +9,7 @@ import { profileController } from "./profile/profile.controller";
 import { fileUploader } from "../../helper/uploadFile";
 import { parseBodyMiddleware } from "../../middleware/parseBodyData";
 import { profileValidation } from "./profile/profile.validation";
+import { managementControllers } from "./management/management.controller";
 
 const router = Router();
 
@@ -78,6 +79,26 @@ router.put(
   parseBodyMiddleware,
   validateRequest(profileValidation.updateProfileSchema),
   profileController.updateProfileAdmin
+);
+
+//--------------- Management --------------------
+
+router.get(
+  "/management/get-clubs",
+  auth(Role.ADMIN),
+  managementControllers.manageClubs
+);
+
+router.get(
+  "/management/get-club-details/:clubUserId",
+  auth(Role.ADMIN),
+  managementControllers.manageClubDetails
+);
+
+router.get(
+  "/management/get-club-post-details/:clubUserId",
+  auth(Role.ADMIN),
+  managementControllers.manageClubPostDetails
 );
 
 export const adminRoutes = router;

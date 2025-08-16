@@ -99,6 +99,12 @@ model ClubInfo {
   sponsorsIds      String[]  @default([])
 }
 
+model PostRemoveCount {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String @db.ObjectId
+  profileId String @db.ObjectId
+}
+
 model BrandInfo {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   userId    String   @unique @db.ObjectId

@@ -32,7 +32,7 @@ export const dynamicQueryBuilder = async ({
     search && searchableFields.length > 0
       ? {
           OR: searchableFields.map((field) => {
-            const keys = field.split(".");
+            const keys = field.includes(".") ? field.split(".") : [field];
             const value = {
               contains: search,
               mode: "insensitive",
