@@ -40,4 +40,5 @@ route.post(
   paymentController.quickSupport
 );
 
+
 export const paymentRoutes = route;

@@ -4,6 +4,9 @@ import { paymentService } from "./payment.service";
 import sendResponse from "../../middleware/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { adminService } from "../admin/admin.service";
+import { createStripeConnectAccount } from "../../helper/createStripeConnectAccount";
+import { prisma } from "../../../utils/prisma";
+import ApiError from "../../error/ApiErrors";
 
 // const createPaymentController = catchAsync(
 //   async (req: Request, res: Response) => {
@@ -88,9 +91,14 @@ const joinTierController = catchAsync(async (req: Request, res: Response) => {
 
 const quickSupport = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
-  const { amount, providerId } = req.body;
+  const { amount, providerId, paymentMethodId } = req.body;
 
-  const result = await paymentService.quickSupport(amount, providerId, userId);
+  const result = await paymentService.quickSupport(
+    amount,
+    providerId,
+    userId,
+    paymentMethodId
+  );
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     message: "Quick support payment processed successfully",
@@ -98,6 +106,8 @@ const quickSupport = catchAsync(async (req: Request, res: Response) => {
     success: true,
   });
 });
+
+
 
 export const paymentController = {
   // createPaymentController,

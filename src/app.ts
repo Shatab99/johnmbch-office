@@ -15,7 +15,7 @@ export const myCache = new NodeCache({ stdTTL: 300 });
 const app = express();
 
 export const corsOptions = {
-  origin: ["http://localhost:3000", "https://dashboard.mrphrenfix.com"],
+  origin: ["http://localhost:3000"],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,

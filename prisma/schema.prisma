@@ -131,7 +131,7 @@ model transactions {
   recipientId           String      @db.ObjectId
   earningType           EarningType
   amount                Float
-  tierId                String?      @db.ObjectId
+  tierId                String?     @db.ObjectId
   stripePaymentIntentId String? // add
   stripeChargeId        String? // add
   createdAt             DateTime    @default(now())
@@ -147,6 +147,15 @@ enum EarningType {
   SPONSOR
   SUPPORT
   QUICKSUPPORT
+}
+
+model adminProfile {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  name       String?
+  logo       String?
+  adminImage String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Post {

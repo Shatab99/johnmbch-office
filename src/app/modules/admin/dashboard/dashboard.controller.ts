@@ -22,15 +22,7 @@ const earningStat = catchAsync(async (req, res) => {
   });
 });
 
-const revenueStat = catchAsync(async (req, res) => {
-  const result = await dashboardService.revenueStat();
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Revenue statistics fetched successfully",
-    data: result,
-  });
-});
+
 
 const getMonthlyRevenueGraph = catchAsync(async (req, res) => {
   const year = Number(req.params.year);
@@ -47,5 +39,4 @@ export const dashboardController = {
   userStat,
   earningStat,
   getMonthlyRevenueGraph,
-  revenueStat,
 };

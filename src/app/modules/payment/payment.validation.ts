@@ -11,12 +11,13 @@ const joinTierValidation = z.object({
   tierId: z.string().min(1, "Tier id is required"),
   clubOrPlayerUserId: z.string().min(1, "Club or Player id is required"),
   content: z.string().optional(),
+  paymentMethodId: z.string().min(1, "Payment method id is required"),
 });
-
 
 const quickSupportValidation = z.object({
   amount: z.number().min(1, "Amount must be greater than 0"),
   providerId: z.string().min(1, "Provider id is required"),
+  paymentMethodId: z.string().min(1, "Payment method id is required"),
 });
 
 export const PaymentValidation = {

@@ -12,7 +12,7 @@ export const StripeConnectAccEmail = async (user: any) => {
     const transporter = nodemailer.createTransport({
         service: 'gmail', // Use your email service provider
         auth: {
-            user: 'mahmudhasan.hb@gmail.com', // Your email address
+            user: process.env.ADMIN_MAIL, // Your email address
             pass: process.env.MAIL_PASS // Your email password
         }
     });

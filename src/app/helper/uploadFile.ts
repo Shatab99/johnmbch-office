@@ -61,10 +61,12 @@ const uploadUniversal = upload.fields([
   { name: "coverImage", maxCount: 1 },
   { name: "licenseImage", maxCount: 1 },
   { name: "certificateImage", maxCount: 1 },
-  { name: "image", maxCount: 1 }, // For single image upload
-  { name: "video", maxCount: 1 }, // For single video upload
+  { name: "image", maxCount: 1 }, 
+  { name: "video", maxCount: 1 }, 
   { name: "banner", maxCount: 1 },
   { name: "images", maxCount: 10 },
+  { name: "logo", maxCount: 1 },
+  { name: "adminImage", maxCount: 1 },
 ]);
 
 // Multiple image uploads

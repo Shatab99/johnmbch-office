@@ -5,6 +5,10 @@ import { Role } from "@prisma/client";
 import validateRequest from "../../middleware/validateRequest";
 import { adminValidation } from "./admin.validation";
 import { dashboardController } from "./dashboard/dashboard.controller";
+import { profileController } from "./profile/profile.controller";
+import { fileUploader } from "../../helper/uploadFile";
+import { parseBodyMiddleware } from "../../middleware/parseBodyData";
+import { profileValidation } from "./profile/profile.validation";
 
 const router = Router();
 
@@ -59,10 +63,21 @@ router.get(
   dashboardController.getMonthlyRevenueGraph
 );
 
+//----------------------- Get admin profile ----------------------------
+
 router.get(
-  "/dashboard/revenue-stat",
+  "/profile/get-profile",
   auth(Role.ADMIN),
-  dashboardController.revenueStat
+  profileController.getAdminProfile
+);
+
+router.put(
+  "/profile/update",
+  auth(Role.ADMIN),
+  fileUploader.uploadUniversal,
+  parseBodyMiddleware,
+  validateRequest(profileValidation.updateProfileSchema),
+  profileController.updateProfileAdmin
 );
 
 export const adminRoutes = router;

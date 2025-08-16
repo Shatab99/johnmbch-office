@@ -5,6 +5,7 @@ import { compare, hash } from "bcrypt";
 import { OTPFn } from "../../helper/OTPFn";
 import OTPVerify from "../../helper/OTPVerify";
 import { prisma } from "../../../utils/prisma";
+import { createStripeConnectAccount } from "../../helper/createStripeConnectAccount";
 
 const createUserIntoDB = async (payload: User) => {
   const findUser = await prisma.user.findUnique({
@@ -125,7 +126,13 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
     },
   });
 
-  return result;
+  await createStripeConnectAccount(id);
+
+  return {
+    message:
+      "Stripe email send to your email please check and complete the process",
+    ...result,
+  };
 };
 
 const updateClubProfile = async (id: string, body: any, image: any) => {
@@ -157,7 +164,13 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
     },
   });
 
-  return result;
+  await createStripeConnectAccount(id);
+
+  return {
+    message:
+      "Stripe email send to your email please check and complete the process",
+    ...result,
+  };
 };
 
 const updateBrandProfile = async (id: string, body: any, image: any) => {
@@ -232,6 +245,8 @@ const updateUserIntoDB = async (id: string, body: any, image: any) => {
 
   // if (!message) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid OTP code");
 
+  // connect the stripe account
+
   if (body.profileRole === "ATHLETE") {
     return updateAtheleteProfile(id, body, image);
   } else if (body.profileRole === "CLUB") {
@@ -253,6 +268,7 @@ const getMyProfile = async (id: string) => {
       AthleteInfo: true,
       ClubInfo: true,
       BrandInfo: true,
+      IndividualInfo: true,
     },
   });
 
@@ -266,6 +282,8 @@ const getMyProfile = async (id: string) => {
         ? result.ClubInfo?.clubName
         : result.profileRole === "BRAND"
         ? result.BrandInfo?.brandName
+        : result.profileRole === "INDIVIDUAL"
+        ? result.IndividualInfo?.fullName
         : undefined,
 
     profileImage:
@@ -275,6 +293,8 @@ const getMyProfile = async (id: string) => {
         ? result.ClubInfo?.logoImage
         : result.profileRole === "BRAND"
         ? result.BrandInfo?.logoImage
+        : result.profileRole === "INDIVIDUAL"
+        ? result.IndividualInfo?.profileImage
         : undefined,
     sportName:
       result.profileRole === "ATHLETE"
@@ -282,6 +302,8 @@ const getMyProfile = async (id: string) => {
         : result.profileRole === "CLUB"
         ? result.ClubInfo?.sportName
         : result.profileRole === "BRAND"
+        ? "Sponsor"
+        : result.profileRole === "INDIVIDUAL"
         ? "Supporter"
         : undefined,
     bio:
@@ -313,6 +335,8 @@ const getMyProfile = async (id: string) => {
         ? result.ClubInfo?.city
         : result.profileRole === "BRAND"
         ? result.BrandInfo?.city
+        : result.profileRole === "INDIVIDUAL"
+        ? result.IndividualInfo?.city
         : null,
     nidPhoto:
       result.profileRole === "ATHLETE"
@@ -324,6 +348,12 @@ const getMyProfile = async (id: string) => {
       result.profileRole === "CLUB" ? result.ClubInfo?.licenseImage : null,
     textCertificate:
       result.profileRole === "CLUB" ? result.ClubInfo?.certificateImage : null,
+    isStripeConnected:
+      result.profileRole === "BRAND" || result.profileRole === "INDIVIDUAL"
+        ? null
+        : result.connectAccountId
+        ? true
+        : false,
   };
 
   const shapedResult = {
@@ -375,6 +405,8 @@ const updateCoverImage = async (userId: string, coverImageUrl: string) => {
 
   return "Cover image updated successfully";
 };
+
+
 
 export const userServices = {
   createUserIntoDB,

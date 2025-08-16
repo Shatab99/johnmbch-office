@@ -40,6 +40,9 @@ const getAllTiers = async (query: any) => {
         amount: tier.amount,
         description: tier.description,
         type: tier.type,
+        showProfile: tier.showProfile,
+        showContent: tier.showContent,
+        showBanner: tier.showBanner,
         features: [
           tier.showProfile ? "Your profile will be shown." : "",
           tier.showContent

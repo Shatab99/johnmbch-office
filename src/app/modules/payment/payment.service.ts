@@ -317,7 +317,7 @@ const splitPaymentFromStripe = async (payload: {
   });
 
   if (finderUser?.connectAccountId === null) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+    throw new ApiError(StatusCodes.NOT_FOUND, "This user is not connected to Stripe !");
   }
   const payment = await stripe.paymentIntents.create({
     amount: Math.round(payload.amount * 100),
@@ -340,7 +340,7 @@ const splitPaymentFromStripe = async (payload: {
 
 const joinTier = async (userId: string, body: any, files: any) => {
   const image = files.banner?.[0]?.location;
-  const { tierId, clubOrPlayerUserId: providerId, content } = body;
+  const { tierId, clubOrPlayerUserId: providerId, content, paymentMethodId } = body;
 
   const tier = await prisma.tier.findUnique({
     where: { id: tierId },
@@ -369,7 +369,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
 
   const paymentdata = {
     providerId,
-    paymentMethodId: "card",
+    paymentMethodId,
     amount: tier.amount,
     paymentMethod: "usd",
   };
@@ -391,7 +391,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
       "You cannot upload a profile for this tier!"
     );
 
-  // await splitPaymentFromStripe(paymentdata);
+  await splitPaymentFromStripe(paymentdata);
 
   const post = await prisma.post.create({
     data: {

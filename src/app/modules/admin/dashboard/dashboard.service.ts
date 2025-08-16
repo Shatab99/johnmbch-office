@@ -49,41 +49,44 @@ const earningStat = async () => {
   };
 };
 
-const revenueStat = async () => {
-  const totalRevenue = await prisma.transactions.aggregate({
-    _sum: {
-      amount: true,
-    },
-  });
-
-  // here have a createAt field and
-  const newSupporter = await prisma.brandInfo.count({
-    where: {
-      createdAt: {
-        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last month
-      },
-    },
-  });
-
-  const newBrand = await prisma.brandInfo.count({
-    where: {
-      createdAt: {
-        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // last month
-      },
-    },
-  });
-
-  return {
-    totalRevenue: (totalRevenue._sum.amount || 0) * 0.1,
-    newSupporter,
-    newBrand,
-  };
-};
 
 const getMonthlyRevenueGraph = async (year: number) => {
   // Get the date range for the whole year
   const yearStart = startOfYear(new Date(year, 0, 1));
   const yearEnd = endOfYear(new Date(year, 11, 31));
+
+  // Total revenue for current year
+  const totalRevenue = await prisma.transactions.aggregate({
+    _sum: {
+      amount: true,
+    },
+    where: {
+      createdAt: {
+        gte: yearStart,
+        lt: yearEnd,
+      },
+    },
+  });
+
+  // New supporters this year
+  const newSupporter = await prisma.brandInfo.count({
+    where: {
+      createdAt: {
+        gte: yearStart,
+        lt: yearEnd,
+      },
+    },
+  });
+
+  // New brands this year
+  const newBrand = await prisma.brandInfo.count({
+    where: {
+      createdAt: {
+        gte: yearStart,
+        lt: yearEnd,
+      },
+    },
+  });
 
   // Fetch all transactions for that year
   const transactions = await prisma.transactions.findMany({
@@ -132,7 +135,10 @@ const getMonthlyRevenueGraph = async (year: number) => {
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   return {
-    currentMonthRevenue,
+    totalRevenue: (totalRevenue._sum.amount || 0) * 0.1,
+    newSupporter,
+    newBrand,
+    // currentMonthRevenue,
     graph,
   };
 };
@@ -140,6 +146,5 @@ const getMonthlyRevenueGraph = async (year: number) => {
 export const dashboardService = {
   userStat,
   earningStat,
-  revenueStat,
   getMonthlyRevenueGraph,
 };

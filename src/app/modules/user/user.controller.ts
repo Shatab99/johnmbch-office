@@ -7,6 +7,8 @@ import validateRequest from "../../middleware/validateRequest";
 import { UserValidation } from "./user.validation";
 import ApiError from "../../error/ApiErrors";
 import { adminService } from "../admin/admin.service";
+import { prisma } from "../../../utils/prisma";
+import { createStripeConnectAccount } from "../../helper/createStripeConnectAccount";
 
 const createUserController = catchAsync(async (req: Request, res: Response) => {
   const body = req.body;
@@ -70,7 +72,6 @@ const updateUserController = catchAsync(async (req: Request, res: Response) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid profile role");
   }
 
-  
   if (role === "ATHLETE")
     validateRequest(UserValidation.updateAtheleteProfileValidation);
   else if (role === "CLUB")
@@ -147,6 +148,31 @@ const getSports = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const connectStripeAccount = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  if (user.profileRole === "INDIVIDUAL")
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "Supporters cannot connect Stripe accounts"
+    );
+
+  if (user.profileRole === "BRAND")
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "Brands cannot connect Stripe accounts"
+    );
+
+  const result = await createStripeConnectAccount(userId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Stripe account connected successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const userController = {
   createUserController,
   updateUserController,
@@ -155,4 +181,5 @@ export const userController = {
   sendCodeBeforeUpdate,
   updateCoverImageController,
   getSports,
+  connectStripeAccount
 };

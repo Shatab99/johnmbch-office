@@ -30,7 +30,12 @@ route.put(
   userController.updateUserController
 );
 route.get("/me", auth(), userController.getMyProfileController);
-route.put("/update-cover-image", auth(Role.USER), fileUploader.uploadUniversal, userController.updateCoverImageController);
+route.put(
+  "/update-cover-image",
+  auth(Role.USER),
+  fileUploader.uploadUniversal,
+  userController.updateCoverImageController
+);
 
 route.post(
   "/send-code-before-update",
@@ -39,5 +44,11 @@ route.post(
 );
 
 route.get("/sports", auth(Role.USER), userController.getSports);
+
+route.post(
+  "/connect-stripe-account",
+  auth(Role.USER),
+  userController.connectStripeAccount
+);
 
 export const userRoutes = route;

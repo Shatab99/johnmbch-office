@@ -969,7 +969,7 @@ const getMyPosts = async (userIdFromToken: string, query: any) => {
     profileImage: user?.AthleteInfo?.profileImage || user?.ClubInfo?.logoImage,
     sportName: user?.AthleteInfo?.sportName || user?.ClubInfo?.sportName,
     coverImage: user?.coverImage,
-     bio: athleteInfo?.bio || clubInfo?.bio,
+    bio: athleteInfo?.bio || clubInfo?.bio,
     clubName: athleteInfo?.clubName,
     member: clubInfo?.members,
     position: athleteInfo?.position,
@@ -1035,6 +1035,7 @@ const searchProfile = async (query: any) => {
       ],
     },
     select: {
+      userId: true,
       fullName: true,
       profileImage: true,
       sportName: true,
@@ -1052,42 +1053,31 @@ const searchProfile = async (query: any) => {
       ],
     },
     select: {
+      userId: true,
       clubName: true,
       logoImage: true,
       sportName: true,
     },
   });
 
-  // Search BrandInfo
-  const brands = await prisma.brandInfo.findMany({
-    where: {
-      OR: [
-        { brandName: { contains: search, mode: "insensitive" } },
-        { city: { contains: search, mode: "insensitive" } },
-        { country: { contains: search, mode: "insensitive" } },
-      ],
-    },
-    select: {
-      brandName: true,
-      logoImage: true,
-    },
-  });
-
   // Map and unify all profiles
   const mapProfile = (
+    userId: string,
     name: string | null | undefined,
     image: string | null | undefined,
     sportName: string | null | undefined
   ) => ({
+    userId: userId,
     profileName: name || "Unknown",
     profileImage: image || "",
-    sportName: sportName && sportName.trim() !== "" ? sportName : "Sponsor",
+    sportName: sportName,
   });
 
   const result = [
-    ...athletes.map((a) => mapProfile(a.fullName, a.profileImage, a.sportName)),
-    ...clubs.map((c) => mapProfile(c.clubName, c.logoImage, c.sportName)),
-    ...brands.map((b) => mapProfile(b.brandName, b.logoImage, "Sponsor")),
+    ...athletes.map((a) =>
+      mapProfile(a.userId, a.fullName, a.profileImage, a.sportName)
+    ),
+    ...clubs.map((c) => mapProfile(c.userId, c.clubName, c.logoImage, c.sportName)),
   ];
 
   return result;
