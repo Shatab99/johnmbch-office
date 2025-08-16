@@ -4,22 +4,43 @@ import ApiError from "../../../error/ApiErrors";
 import { dynamicQueryBuilder } from "../../../helper/queryBuilder";
 
 const manageClubs = async (query: any) => {
-  const data = await dynamicQueryBuilder({
-    model: prisma.user,
-    query,
-    searchableFields: [
-      "ClubInfo.clubName",
-      "ClubInfo.country",
-      "ClubInfo.city",
-      "ClubInfo.sportName",
-    ],
-    includes: {
-      ClubInfo: true,
-    },
-    forcedFilters: {
-      profileRole: "CLUB",
-    },
-  });
+  const { role, ...restQuery } = query;
+  const data =
+    role === "club"
+      ? await dynamicQueryBuilder({
+          model: prisma.user,
+          query: restQuery,
+          searchableFields: [
+            "ClubInfo.clubName",
+            "ClubInfo.country",
+            "ClubInfo.city",
+            "ClubInfo.sportName",
+          ],
+          includes: {
+            ClubInfo: true,
+            AthleteInfo: true,
+          },
+          forcedFilters: {
+            profileRole: "CLUB",
+          },
+        })
+      : await dynamicQueryBuilder({
+          model: prisma.user,
+          query: restQuery,
+          searchableFields: [
+            "AthleteInfo.fullName",
+            "AthleteInfo.sportName",
+            "AthleteInfo.country",
+            "AthleteInfo.city",
+          ],
+          includes: {
+            ClubInfo: true,
+            AthleteInfo: true,
+          },
+          forcedFilters: {
+            profileRole: "ATHLETE",
+          },
+        });
 
   const clubs = await Promise.all(
     data.data.map(async (club: any) => {
@@ -50,14 +71,26 @@ const manageClubs = async (query: any) => {
 
       return {
         createDate: formattedDate,
-        userId: club.ClubInfo.userId,
-        name: club.ClubInfo.clubName,
-        country: club.ClubInfo.country,
-        city: club.ClubInfo.city,
-        sport: club.ClubInfo.sportName,
-        licenseImage: club.ClubInfo.licenseImage,
-        certificateImage: club.ClubInfo.certificateImage,
-        totalTierAmount: totalTierAmount._sum.amount || 0, // ✅ fix here
+        userId:
+          role === "club" ? club.ClubInfo.userId : club.AthleteInfo.userId,
+        name:
+          role === "club" ? club.ClubInfo.clubName : club.AthleteInfo.fullName,
+        country:
+          role === "club" ? club.ClubInfo.country : club.AthleteInfo.country,
+        city: role === "club" ? club.ClubInfo.city : club.AthleteInfo.city,
+        sport:
+          role === "club"
+            ? club.ClubInfo.sportName
+            : club.AthleteInfo.sportName,
+        ...(role === "athlete" && {
+          passportOrNidImg: club.AthleteInfo.passportOrNidImg,
+          selfieImage: club.AthleteInfo.selfieImage,
+        }),
+        ...(role === "club" && {
+          licenseImage: club.ClubInfo.licenseImage,
+          certificateImage: club.ClubInfo.certificateImage,
+        }),
+        totalTierAmount: totalTierAmount._sum.amount || 0,
         supporters,
         sponsors,
         postCreated,
@@ -74,6 +107,7 @@ const manageClubDetails = async (clubUserId: string) => {
     where: { id: clubUserId },
     include: {
       ClubInfo: true,
+      AthleteInfo: true,
       Recipient: {
         include: {
           Donor: {
@@ -133,19 +167,26 @@ const manageClubPostDetails = async (clubUserId: string) => {
     },
   });
 
-  return posts.map((post) => ({
-    id: post.id,
-    content: post.content,
-    image: post.image,
-    video: post.video,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-    likes: post.likes.length,
-    athleteInfo: post.AthleteInfo,
-    clubInfo: post.ClubInfo,
-    brandInfo: post.BrandInfo,
-    individualInfo: post.IndividualInfo,
-  }));
+  const clubProfile = await prisma.clubInfo.findUnique({
+    where: { userId: clubUserId },
+  });
+
+  return posts.map((post) => {
+    const profile = {
+      name: clubProfile?.clubName,
+      image: clubProfile?.logoImage,
+      sportName: clubProfile?.sportName,
+    };
+    const postData = {
+      id: post.id,
+      content: post.content,
+      image: post.image,
+      video: post.video,
+      createdAt: post.createdAt,
+      updatedAt: post.updatedAt,
+    };
+    return { profile, postData };
+  });
 };
 
 export const managementServices = {
