@@ -127,17 +127,19 @@ const manageClubDetails = async (clubUserId: string) => {
 
   if (!club) throw new ApiError(404, "Club not found");
 
-  const sponsors = club.Recipient[0].Donor.map((donor) => {
-    const { profileRole } = donor.userDetails;
-    return profileRole === "BRAND"
-      ? {
-          userId: donor.userId,
-          name: donor.userDetails.BrandInfo?.brandName,
-          image: donor.userDetails.BrandInfo?.logoImage,
-          sportName: "Sponsor",
-        }
-      : null;
-  }).filter(Boolean);
+  const sponsors = club.Recipient
+    ? club.Recipient[0].Donor.map((donor) => {
+        const { profileRole } = donor.userDetails;
+        return profileRole === "BRAND"
+          ? {
+              userId: donor.userId,
+              name: donor.userDetails.BrandInfo?.brandName,
+              image: donor.userDetails.BrandInfo?.logoImage,
+              sportName: "Sponsor",
+            }
+          : null;
+      }).filter(Boolean)
+    : [];
 
   const supporters = club.Recipient[0].Donor.map((donor) => {
     const { profileRole } = donor.userDetails;

@@ -21,6 +21,8 @@ router.post(
 );
 
 router.get("/get-all-tiers", auth(Role.ADMIN), adminController.getAllTiers);
+router.get("/get-tier-details/:id", auth(Role.ADMIN), adminController.tierDetails);
+
 router.delete("/delete-tier/:id", auth(Role.ADMIN), adminController.deleteTier);
 router.put(
   "/edit-tier/:id",

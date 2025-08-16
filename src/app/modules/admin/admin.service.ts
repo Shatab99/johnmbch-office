@@ -60,6 +60,13 @@ const getAllTiers = async (query: any) => {
   return result;
 };
 
+const tierDetails = async (id: string) => {
+  const result = await prisma.tier.findUnique({
+    where: { id },
+  });
+  return result;
+};
+
 const deleteTier = async (id: string) => {
   const result = await prisma.tier.delete({
     where: { id },
@@ -104,4 +111,5 @@ export const adminService = {
   editATier,
   deleteSports,
   getAllSports,
+  tierDetails,
 };

@@ -75,10 +75,22 @@ const getAllSports = catchAsync(async (req, res) => {
   });
 });
 
+const tierDetails = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const result = await adminService.tierDetails(id);
+  sendResponse(res, {
+    statusCode: 200,
+    data: result,
+    success: true,
+    message: "Tier details retrieved successfully",
+  });
+});
+
 export const adminController = {
   createTier,
   getAllTiers,
   deleteTier,
+  tierDetails,
   addSports,
   editATier,
   deleteSports,
