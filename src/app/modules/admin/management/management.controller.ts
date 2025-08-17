@@ -35,8 +35,31 @@ const manageClubPostDetails = catchAsync(async (req, res) => {
   });
 });
 
+const deletePost = catchAsync(async (req, res) => {
+  const { postId } = req.params;
+  const result = await managementServices.deletePost(postId);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Post deleted successfully",
+    data: result,
+    success: true,
+  });
+});
+
+const manageSupporterSponsors = catchAsync(async (req, res) => {
+  const result = await managementServices.manageSupporterSponsors(req.query);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Supporters and sponsors retrieved successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const managementControllers = {
   manageClubs,
   manageClubDetails,
   manageClubPostDetails,
+  manageSupporterSponsors,
+  deletePost,
 };

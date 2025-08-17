@@ -65,7 +65,9 @@ const manageClubs = async (query: any) => {
       });
 
       const formattedDate = format(
-        new Date(club.ClubInfo.createdAt),
+        new Date(
+          role === "club" ? club.ClubInfo.createdAt : club.AthleteInfo.createdAt
+        ),
         "dd,MM,yyyy"
       );
 
@@ -95,6 +97,7 @@ const manageClubs = async (query: any) => {
         sponsors,
         postCreated,
         postRemoved,
+        status: club.status,
       };
     })
   );
@@ -127,8 +130,9 @@ const manageClubDetails = async (clubUserId: string) => {
 
   if (!club) throw new ApiError(404, "Club not found");
 
-  const sponsors = club.Recipient
-    ? club.Recipient[0].Donor.map((donor) => {
+  const sponsors =
+    club.Recipient?.flatMap((recipient) =>
+      recipient.Donor.map((donor) => {
         const { profileRole } = donor.userDetails;
         return profileRole === "BRAND"
           ? {
@@ -138,21 +142,23 @@ const manageClubDetails = async (clubUserId: string) => {
               sportName: "Sponsor",
             }
           : null;
-      }).filter(Boolean)
-    : [];
+      })
+    ).filter(Boolean) || [];
 
-  const supporters = club.Recipient[0].Donor.map((donor) => {
-    const { profileRole } = donor.userDetails;
-
-    return profileRole === "INDIVIDUAL"
-      ? {
-          userId: donor.userId,
-          name: donor.userDetails.IndividualInfo?.fullName,
-          image: donor.userDetails.IndividualInfo?.profileImage,
-          sportName: "Supporter",
-        }
-      : null;
-  }).filter(Boolean);
+  const supporters =
+    club.Recipient.flatMap((recipient) =>
+      recipient.Donor.map((donor) => {
+        const { profileRole } = donor.userDetails;
+        return profileRole === "INDIVIDUAL"
+          ? {
+              userId: donor.userId,
+              name: donor.userDetails.IndividualInfo?.fullName,
+              image: donor.userDetails.IndividualInfo?.profileImage,
+              sportName: "Supporter",
+            }
+          : null;
+      })
+    ).filter(Boolean) || [];
 
   return { supporters, sponsors };
 };
@@ -191,8 +197,113 @@ const manageClubPostDetails = async (clubUserId: string) => {
   });
 };
 
+const deletePost = async (postId: string) => {
+  await prisma.post.delete({
+    where: { id: postId },
+  });
+  return "successfully deleted";
+};
+
+const manageSupporterSponsors = async (query: any) => {
+  const { role, ...restQuery } = query;
+
+  const data =
+    role === "brand"
+      ? await dynamicQueryBuilder({
+          model: prisma.user,
+          query: restQuery,
+          searchableFields: [
+            "BrandInfo.brandName",
+            "BrandInfo.country",
+            "BrandInfo.city",
+          ],
+          includes: {
+            BrandInfo: true,
+            IndividualInfo: true,
+          },
+          forcedFilters: {
+            profileRole: "BRAND",
+          },
+        })
+      : await dynamicQueryBuilder({
+          model: prisma.user,
+          query: restQuery,
+          searchableFields: [
+            "IndividualInfo.fullName",
+            "IndividualInfo.country",
+            "IndividualInfo.city",
+          ],
+          includes: {
+            IndividualInfo: true,
+            BrandInfo: true,
+          },
+          forcedFilters: {
+            profileRole: "INDIVIDUAL",
+          },
+        });
+
+  const supporterSponsors = await Promise.all(
+    data.data.map(async (user: any) => {
+      const totalAmountDonated = await prisma.transactions.aggregate({
+        where: { senderId: user.id },
+        _sum: { amount: true },
+      });
+
+      const athletes = await prisma.transactions.count({
+        where: {
+          senderId: user.id,
+          Recipient: {
+            profileRole: "ATHLETE",
+          },
+        },
+      });
+
+      const clubs = await prisma.transactions.count({
+        where: {
+          senderId: user.id,
+          Recipient: {
+            profileRole: "CLUB",
+          },
+        },
+      });
+
+      const formattedDate = format(
+        new Date(
+          role === "brand"
+            ? user.BrandInfo.createdAt
+            : user.IndividualInfo.createdAt
+        ),
+        "dd,MM,yyyy"
+      );
+
+      return {
+        createDate: formattedDate,
+        userId:
+          role === "brand" ? user.BrandInfo.userId : user.IndividualInfo.userId,
+        name:
+          role === "brand"
+            ? user.BrandInfo.brandName
+            : user.IndividualInfo.fullName,
+        country:
+          role === "brand"
+            ? user.BrandInfo.country
+            : user.IndividualInfo.country,
+        city: role === "brand" ? user.BrandInfo.city : user.IndividualInfo.city,
+        tierDonated: totalAmountDonated._sum.amount || 0,
+        status: user.status,
+        athletes,
+        clubs,
+      };
+    })
+  );
+
+  return { metadata: data.meta, data: supporterSponsors };
+};
+
 export const managementServices = {
   manageClubs,
   manageClubDetails,
   manageClubPostDetails,
+  deletePost,
+  manageSupporterSponsors,
 };

@@ -6,6 +6,7 @@ import { OTPFn } from "../../helper/OTPFn";
 import OTPVerify from "../../helper/OTPVerify";
 import { prisma } from "../../../utils/prisma";
 import { createStripeConnectAccount } from "../../helper/createStripeConnectAccount";
+import { stripe } from "../../../config/stripe";
 
 const createUserIntoDB = async (payload: User) => {
   const findUser = await prisma.user.findUnique({

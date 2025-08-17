@@ -317,7 +317,10 @@ const splitPaymentFromStripe = async (payload: {
   });
 
   if (finderUser?.connectAccountId === null) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "This user is not connected to Stripe !");
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "This user is not connected to Stripe !"
+    );
   }
   const payment = await stripe.paymentIntents.create({
     amount: Math.round(payload.amount * 100),
@@ -340,7 +343,12 @@ const splitPaymentFromStripe = async (payload: {
 
 const joinTier = async (userId: string, body: any, files: any) => {
   const image = files.banner?.[0]?.location;
-  const { tierId, clubOrPlayerUserId: providerId, content, paymentMethodId } = body;
+  const {
+    tierId,
+    clubOrPlayerUserId: providerId,
+    content,
+    paymentMethodId,
+  } = body;
 
   const tier = await prisma.tier.findUnique({
     where: { id: tierId },
@@ -352,8 +360,10 @@ const joinTier = async (userId: string, body: any, files: any) => {
   });
 
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  if (user.profileRole !== "BRAND")
+  if (tier.type !== user.profileRole)
     throw new ApiError(StatusCodes.FORBIDDEN, "User is not a brand!");
+  if (user.profileRole !== tier.type)
+    throw new ApiError(StatusCodes.FORBIDDEN, "User is not an individual!");
 
   const brandInfo = await prisma.brandInfo.findUnique({ where: { userId } });
   if (!brandInfo)

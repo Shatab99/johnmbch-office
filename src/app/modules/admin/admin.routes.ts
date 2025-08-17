@@ -21,7 +21,11 @@ router.post(
 );
 
 router.get("/get-all-tiers", auth(Role.ADMIN), adminController.getAllTiers);
-router.get("/get-tier-details/:id", auth(Role.ADMIN), adminController.tierDetails);
+router.get(
+  "/get-tier-details/:id",
+  auth(Role.ADMIN),
+  adminController.tierDetails
+);
 
 router.delete("/delete-tier/:id", auth(Role.ADMIN), adminController.deleteTier);
 router.put(
@@ -101,6 +105,18 @@ router.get(
   "/management/get-club-post-details/:clubUserId",
   auth(Role.ADMIN),
   managementControllers.manageClubPostDetails
+);
+
+router.get(
+  "/management/get-supporter-sponsors",
+  auth(Role.ADMIN),
+  managementControllers.manageSupporterSponsors
+);
+
+router.delete(
+  "/management/delete-post/:postId",
+  auth(Role.ADMIN),
+  managementControllers.deletePost
 );
 
 export const adminRoutes = router;
