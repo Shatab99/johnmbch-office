@@ -4,6 +4,7 @@ import ApiError from "../../error/ApiErrors";
 import Stripe from "stripe";
 import { stripe } from "../../../config/stripe";
 import { createStripeCustomerAcc } from "../../helper/createStripeCustomerAcc";
+import { notificationServices } from "../notifications/notification.service";
 
 interface payloadType {
   amount: number;
@@ -370,12 +371,15 @@ const joinTier = async (userId: string, body: any, files: any) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "Brand info not found!");
 
   const clubORAthleteUser = await prisma.user.findUnique({
-    where: { id: providerId },
+    where: { id: providerId, status: "ACTIVE" },
     include: {
       AthleteInfo: true,
       ClubInfo: true,
     },
   });
+
+  if (!clubORAthleteUser)
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
 
   const paymentdata = {
     providerId,
@@ -456,6 +460,19 @@ const joinTier = async (userId: string, body: any, files: any) => {
     },
   });
 
+  await notificationServices.sendSingleNotification(providerId, userId, {
+    title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
+    profileImg:
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.profileImage
+        : clubORAthleteUser?.ClubInfo?.logoImage,
+    body: `You’ve successfully subscribed to ${
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.fullName
+        : clubORAthleteUser?.ClubInfo?.clubName
+    } with $${tier.amount}/month. Thank you for your support.`,
+  });
+
   const message = `Successfully ${
     tier.type === "BRAND" ? "sponsored" : "supported"
   } tier on ${
@@ -480,7 +497,23 @@ const quickSupport = async (
     paymentMethod: "usd",
   };
 
+  const clubORAthleteUser = await prisma.user.findUnique({
+    where: { id: providerId, status: "ACTIVE" },
+    include: {
+      AthleteInfo: true,
+      ClubInfo: true,
+    },
+  });
+
+  if (!clubORAthleteUser)
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+
   await splitPaymentFromStripe(paymentdata);
+
+  await notificationServices.sendSingleNotification(providerId, userId, {
+    title: "Quick Support",
+    body: `You have successfully sent $10 to Alek Gender. Thank you for your support.`,
+  });
 
   await prisma.transactions.create({
     data: {

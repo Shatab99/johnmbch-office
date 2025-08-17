@@ -359,6 +359,7 @@ model SubscriptionUser {
 model Notifications {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   receiverId String   @db.ObjectId
+  image      String?
   senderId   String?  @db.ObjectId
   title      String
   body       String

@@ -258,7 +258,7 @@ const getClubAthleteSponsors = async (userId: string) => {
 
       return {
         profile,
-        postData: { ...restPostData, likes: likesData },
+        postData: { postId: posts.id, ...restPostData, likes: likesData },
         isLiked,
       };
     })
