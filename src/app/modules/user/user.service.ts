@@ -365,6 +365,9 @@ const getMyProfile = async (id: string) => {
     isProfileUpdated: result.profileRole ? true : false,
     profile,
   };
+  const account = await stripe.accounts.retrieve("acct_1Rwzm1Pptt7PW5j9");
+
+  console.log(account.capabilities);
 
   return shapedResult;
 };

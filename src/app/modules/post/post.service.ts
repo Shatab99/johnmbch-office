@@ -519,7 +519,7 @@ const getProfileDetailsFromDb = async (
 
     return {
       profile: profileData,
-      postData: { ...restPostData, likes: likesData },
+      postData: { postId: post.id, ...restPostData, likes: likesData },
       isLiked,
     };
   });
@@ -607,7 +607,7 @@ const getProfileDetailsFromDb = async (
 
     return {
       profile: brandProfile,
-      postData: { ...restPostData, likes: likesData },
+      postData: { postId: post.id, ...restPostData, likes: likesData },
       isLiked,
     };
   });
@@ -1077,7 +1077,9 @@ const searchProfile = async (query: any) => {
     ...athletes.map((a) =>
       mapProfile(a.userId, a.fullName, a.profileImage, a.sportName)
     ),
-    ...clubs.map((c) => mapProfile(c.userId, c.clubName, c.logoImage, c.sportName)),
+    ...clubs.map((c) =>
+      mapProfile(c.userId, c.clubName, c.logoImage, c.sportName)
+    ),
   ];
 
   return result;

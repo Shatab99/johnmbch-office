@@ -119,4 +119,17 @@ router.delete(
   managementControllers.deletePost
 );
 
+router.put(
+  "/change-status/:userId",
+  validateRequest(adminValidation.changeStatus),
+  auth(Role.ADMIN),
+  managementControllers.changeStatus
+);
+
+router.get(
+  "/management/manage-supporter-sponsors/:userId",
+  auth(Role.ADMIN),
+  managementControllers.manageSupporterSponsorsDetails
+);
+
 export const adminRoutes = router;

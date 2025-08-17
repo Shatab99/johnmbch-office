@@ -203,6 +203,15 @@ const deletePost = async (postId: string) => {
   });
   return "successfully deleted";
 };
+const changeStatus = async (
+  userId: string,
+  status: "ACTIVE" | "HIDE" | "BLOCKED"
+) => {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { status },
+  });
+};
 
 const manageSupporterSponsors = async (query: any) => {
   const { role, ...restQuery } = query;
@@ -300,10 +309,62 @@ const manageSupporterSponsors = async (query: any) => {
   return { metadata: data.meta, data: supporterSponsors };
 };
 
+const manageSupporterSponsorsDetails = async (userId: string) => {
+  const data = await prisma.transactions.findMany({
+    where: { senderId: userId },
+    include: {
+      Recipient: {
+        include: {
+          ClubInfo: true,
+          AthleteInfo: true,
+        },
+      },
+    },
+  });
+
+  const clubs = data
+    .map((d) => {
+      const recipient = d.Recipient;
+      const profile =
+        recipient.profileRole === "CLUB"
+          ? {
+              name: recipient.ClubInfo?.clubName,
+              image: recipient.ClubInfo?.logoImage,
+              sportName: recipient.ClubInfo?.sportName,
+            }
+          : null;
+
+      return profile;
+    })
+    .filter(Boolean);
+
+  const athletes = data
+    .map((d) => {
+      const recipient = d.Recipient;
+      const profile =
+        recipient.profileRole === "ATHLETE"
+          ? {
+              id: recipient.AthleteInfo?.id || null,
+              userId: recipient.AthleteInfo?.userId || null,
+              name: recipient.AthleteInfo?.fullName,
+
+              image: recipient.AthleteInfo?.profileImage,
+              sportName: recipient.AthleteInfo?.sportName,
+            }
+          : null;
+      return profile;
+    })
+    .filter(Boolean);
+
+  return { clubs, athletes };
+};
+
 export const managementServices = {
   manageClubs,
   manageClubDetails,
   manageClubPostDetails,
   deletePost,
   manageSupporterSponsors,
+  changeStatus,
+  manageSupporterSponsorsDetails,
 };

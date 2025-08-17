@@ -56,10 +56,35 @@ const manageSupporterSponsors = catchAsync(async (req, res) => {
   });
 });
 
+const changeStatus = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+  const { status } = req.body;
+  await managementServices.changeStatus(userId, status);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "User status updated successfully",
+    success: true,
+  });
+});
+
+const manageSupporterSponsorsDetails = catchAsync(async (req, res) => {
+  const result = await managementServices.manageSupporterSponsorsDetails(
+    req.params.userId
+  );
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Supporters and sponsors details retrieved successfully",
+    data: result,
+    success: true,
+  });
+});
+
 export const managementControllers = {
   manageClubs,
   manageClubDetails,
   manageClubPostDetails,
   manageSupporterSponsors,
   deletePost,
+  changeStatus,
+  manageSupporterSponsorsDetails
 };

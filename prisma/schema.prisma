@@ -18,7 +18,7 @@ model User {
   email            String            @unique
   AdminName        String?
   role             Role              @default(USER)
-  status           Status            @default(PENDING)
+  status           Status            @default(ACTIVE)
   coverImage       String?
   password         String
   fcmToken         String?
@@ -376,7 +376,7 @@ enum Role {
 }
 
 enum Status {
-  PENDING
+  HIDE
   ACTIVE
   BLOCKED
 }

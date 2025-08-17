@@ -451,7 +451,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
       senderId: userId,
       recipientId: providerId,
       amount: tier.amount,
-      earningType: "SPONSOR",
+      earningType: tier.type === "BRAND" ? "SPONSOR" : "SUPPORT",
       tierId: tier.id,
     },
   });

@@ -20,8 +20,13 @@ const addSports = z.object({
   name: z.string().min(1, "Name is required"),
 });
 
+const changeStatus = z.object({
+  status: z.enum(["ACTIVE", "HIDE", "BLOCKED"]),
+});
+
 export const adminValidation = {
   createTier,
   editTier,
   addSports,
+  changeStatus,
 };
