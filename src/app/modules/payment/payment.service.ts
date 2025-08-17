@@ -462,7 +462,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
 
   await notificationServices.sendSingleNotification(providerId, userId, {
     title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
-    profileImg:
+    image:
       clubORAthleteUser?.profileRole === "ATHLETE"
         ? clubORAthleteUser?.AthleteInfo?.profileImage
         : clubORAthleteUser?.ClubInfo?.logoImage,
@@ -512,7 +512,15 @@ const quickSupport = async (
 
   await notificationServices.sendSingleNotification(providerId, userId, {
     title: "Quick Support",
-    body: `You have successfully sent $10 to Alek Gender. Thank you for your support.`,
+    image:
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.profileImage
+        : clubORAthleteUser?.ClubInfo?.logoImage,
+    body: `You have successfully sent $${amount} to ${
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.fullName
+        : clubORAthleteUser?.ClubInfo?.clubName
+    }. Thank you for your support.`,
   });
 
   await prisma.transactions.create({
