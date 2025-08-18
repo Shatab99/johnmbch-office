@@ -66,7 +66,7 @@ export async function setupWebSocket(server: Server) {
             const { receiverId, message, images } = parsedData;
 
             console.log("ws.userId ", ws.userId);
-            if (!ws.userId || !receiverId || !message) {
+            if (!ws.userId || !receiverId) {
               console.log("Invalid message payload");
               return;
             }
@@ -141,6 +141,24 @@ export async function setupWebSocket(server: Server) {
                   { senderId: receiverId, receiverId: ws.userId },
                 ],
               },
+              include: {
+                sender: {
+                  include: {
+                    AthleteInfo: true,
+                    ClubInfo: true,
+                    BrandInfo: true,
+                    IndividualInfo: true,
+                  },
+                },
+                receiver: {
+                  include: {
+                    AthleteInfo: true,
+                    ClubInfo: true,
+                    BrandInfo: true,
+                    IndividualInfo: true,
+                  },
+                },
+              },
             });
 
             if (!room) {
@@ -158,10 +176,30 @@ export async function setupWebSocket(server: Server) {
               data: { isRead: true },
             });
 
+            const admin = await prisma.adminProfile.findFirst({});
+
+            const receiverProfile = {
+              name:
+                room.receiver?.AthleteInfo?.fullName ||
+                room.receiver?.ClubInfo?.clubName ||
+                room.receiver?.IndividualInfo?.fullName ||
+                room.receiver?.BrandInfo?.brandName ||
+                (room.receiver.role === "ADMIN"
+                  ? admin?.adminImage
+                  : "Unknown"),
+              image:
+                room.receiver?.AthleteInfo?.profileImage ||
+                room.receiver?.ClubInfo?.logoImage ||
+                room.receiver?.IndividualInfo?.profileImage ||
+                room.receiver?.BrandInfo?.logoImage ||
+                (room.receiver.role === "ADMIN" ? admin?.adminImage : null),
+            };
+
             ws.send(
               JSON.stringify({
                 event: "fetchChats",
                 data: chats,
+                receiverProfile,
               })
             );
             break;
@@ -252,11 +290,11 @@ export async function setupWebSocket(server: Server) {
                     in: userIds,
                   },
                 },
-                include: {
-                  AthleteInfo: true,
-                  ClubInfo: true,
-                  BrandInfo: true,
-                },
+                // include: {
+                //   AthleteInfo: true,
+                //   ClubInfo: true,
+                //   BrandInfo: true,
+                // },
               });
 
               // Combine user info with their last message

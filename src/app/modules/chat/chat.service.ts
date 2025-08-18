@@ -37,7 +37,7 @@ const sendMessage = async (
       senderId,
       receiverId,
       message,
-      images: { set: images || [] }, 
+      images: { set: images || [] },
       roomId: room.id,
     },
     include: {
@@ -59,7 +59,6 @@ const sendMessage = async (
 
   return newMessage;
 };
-
 
 const fetchChats = async (userId: string, receiverId: string) => {
   const room = await prisma.room.findFirst({
@@ -95,20 +94,25 @@ const getInboxPreview = async (userId: string) => {
         include: {
           AthleteInfo: true,
           ClubInfo: true,
+          BrandInfo: true,
+          IndividualInfo: true,
         },
       },
       receiver: {
         include: {
           AthleteInfo: true,
           ClubInfo: true,
+          BrandInfo: true,
+          IndividualInfo: true,
         },
       },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
-  return rooms.map((room: any) => {
+  const admin = await prisma.adminProfile.findFirst({})
 
+  return rooms.map((room: any) => {
     const otherUser = room.senderId === userId ? room.receiver : room.sender;
     const latestMessage = room.chat[0];
 
@@ -118,18 +122,21 @@ const getInboxPreview = async (userId: string) => {
         name:
           otherUser?.AthleteInfo?.fullName ||
           otherUser?.ClubInfo?.clubName ||
-          "Unknown",
+          otherUser?.IndividualInfo?.fullName ||
+          otherUser?.BrandInfo?.brandName ||
+          (otherUser.role === "ADMIN" ? "Admin" : "Unknown"),
         image:
           otherUser?.AthleteInfo?.profileImage ||
           otherUser?.ClubInfo?.logoImage ||
-          null,
+          otherUser?.IndividualInfo?.profileImage ||
+          otherUser?.BrandInfo?.logoImage ||
+          (otherUser.role === "ADMIN" ? admin?.adminImage : null),
       },
-      lastMessage: latestMessage?.message || "",
+      lastMessage: latestMessage?.message || "Sent an image",
       time: latestMessage?.createdAt || room.updatedAt,
       unreadCount: 0,
     };
   });
-
 };
 
 const getOnlineUsers = async (userIds: string[]) => {
