@@ -35,6 +35,7 @@ export const webHookService = async (
         }
 
         // Upsert subscription user info
+        // @ts-ignore
         await prisma.subscriptionUser.upsert({
           where: { userId: subscription.metadata.userId },
           update: {

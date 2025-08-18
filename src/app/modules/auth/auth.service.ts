@@ -31,7 +31,7 @@ const logInFromDB = async (payload: {
     );
   }
 
-  if (findUser.status === "PENDING" && !findUser.isVerified) {
+  if (findUser.status === "HIDE" && !findUser.isVerified) {
     OTPFn(findUser.email);
     throw new ApiError(
       401,
