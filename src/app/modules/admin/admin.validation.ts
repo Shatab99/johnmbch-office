@@ -13,7 +13,9 @@ const editTier = z.object({
   amount: z.number().min(0, "Price must be a positive number").optional(),
   description: z.string().optional(),
   type: z.enum(["INDIVIDUAL", "BRAND"]).optional(),
-  features: z.array(z.enum(["CONTENT", "BANNER", "PROFILE"])).optional(),
+  showProfile: z.boolean().optional(),
+  showContent: z.boolean().optional(),
+  showBanner: z.boolean().optional(),
 });
 
 const addSports = z.object({

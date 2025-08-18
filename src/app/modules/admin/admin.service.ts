@@ -75,9 +75,16 @@ const deleteTier = async (id: string) => {
 };
 
 const editATier = async (id: string, data: any) => {
+
+  // const feature = await prisma.tier.findUnique({
+  //   where: { id },
+  // });
+
   const result = await prisma.tier.update({
     where: { id },
-    data,
+    data: {
+      ...data
+    },
   });
   return result;
 };

@@ -194,7 +194,7 @@ const joinTier = async (userId: string, body: any, files: any) => {
     );
 
   if (user.profileRole !== tier.type)
-    throw new ApiError(StatusCodes.FORBIDDEN, "Forbidden!");
+    throw new ApiError(StatusCodes.FORBIDDEN, "You can not pay in this tier");
 
   // get or create Stripe customer
   const customerId = await getOrCreateCustomer(user, paymentMethodId);
