@@ -421,6 +421,7 @@ const getProfileDetailsFromDb = async (
   const clubInfo = user.ClubInfo;
 
   const profile = {
+    userId: user.id,
     profileId: athleteInfo?.id || clubInfo?.id,
     profileRole: user?.profileRole,
     fullName: athleteInfo?.fullName || clubInfo?.clubName,
