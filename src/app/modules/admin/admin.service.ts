@@ -103,6 +103,13 @@ const getAllSports = async () => {
   return result;
 };
 
+const getAllNotifications = async () => {
+  const result = await prisma.notifications.findMany({
+    where: { role: "ADMIN" },
+  });
+  return result;
+};
+
 export const adminService = {
   createTier,
   getAllTiers,
@@ -112,4 +119,5 @@ export const adminService = {
   deleteSports,
   getAllSports,
   tierDetails,
+  getAllNotifications,
 };

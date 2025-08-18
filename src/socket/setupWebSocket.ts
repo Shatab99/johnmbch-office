@@ -106,6 +106,22 @@ export async function setupWebSocket(server: Server) {
             break;
           }
 
+          case "sendNotification": {
+            const { userId, message } = parsedData;
+            if (!ws.userId || !userId || !message) {
+              console.log("Invalid notification payload");
+              return;
+            }
+
+            const receiverSocket = userSockets.get(userId);
+            if (receiverSocket) {
+              receiverSocket.send(
+                JSON.stringify({ event: "notification", data: { message } })
+              );
+            }
+            break;
+          }
+
           case "project": {
             ws.send(JSON.stringify({ parsedData }));
             return;

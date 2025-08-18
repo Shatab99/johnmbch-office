@@ -86,6 +86,16 @@ const tierDetails = catchAsync(async (req, res) => {
   });
 });
 
+const getAllNotifications = catchAsync(async (req, res) => {
+  const result = await adminService.getAllNotifications();
+  sendResponse(res, {
+    statusCode: 200,
+    data: result,
+    success: true,
+    message: "Notifications retrieved successfully",
+  });
+});
+
 export const adminController = {
   createTier,
   getAllTiers,
@@ -95,4 +105,5 @@ export const adminController = {
   editATier,
   deleteSports,
   getAllSports,
+  getAllNotifications,
 };

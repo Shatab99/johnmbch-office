@@ -44,7 +44,7 @@ export const createStripeConnectAccount = async (userId: string) => {
 
     // send email or return URL to user
 
-    await StripeConnectAccEmail(user);
+    await StripeConnectAccEmail(accountLink.url, user.email);
     return {
       message: "Please complete Stripe onboarding",
       onboardingUrl: accountLink.url,

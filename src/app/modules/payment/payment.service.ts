@@ -1,312 +1,379 @@
 import { StatusCodes } from "http-status-codes";
+import { stripe } from "../../../config/stripe";
 import { prisma } from "../../../utils/prisma";
 import ApiError from "../../error/ApiErrors";
-import Stripe from "stripe";
-import { stripe } from "../../../config/stripe";
-import { createStripeCustomerAcc } from "../../helper/createStripeCustomerAcc";
 import { notificationServices } from "../notifications/notification.service";
+import Stripe from "stripe";
 
-interface payloadType {
-  amount: number;
-  paymentMethodId: string;
-  paymentMethod?: string;
-  bookId: string;
-}
+// const saveCardInStripe = async (payload: {
+//   paymentMethodId: string;
+//   cardholderName?: string;
+//   userId: string;
+// }) => {
+//   const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+//   if (!user) {
+//     throw new ApiError(404, "User not found!");
+//   }
+//   const { paymentMethodId, cardholderName } = payload;
+//   let customerId = user.customerId;
+//   if (!customerId) {
+//     const customer = await stripe.customers.create({
+//       email: user.email as string,
+//       payment_method: paymentMethodId,
+//       invoice_settings: {
+//         default_payment_method: paymentMethodId,
+//       },
+//     });
+//     customerId = customer.id;
+//     await prisma.user.update({
+//       where: { id: payload.userId },
+//       data: { customerId },
+//     });
+//   }
 
-const createIntentInStripe = async (payload: payloadType, userId: string) => {
-  const findUser = await prisma.user.findUnique({ where: { id: userId } });
+//   const paymentMethods = await stripe.paymentMethods.list({
+//     customer: customerId,
+//     type: "card",
+//   });
 
-  if (findUser?.customerId === null) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  }
+//   const newCard: any = await stripe.paymentMethods.retrieve(paymentMethodId);
 
-  await stripe.paymentMethods.attach(payload.paymentMethodId, {
-    customer: findUser?.customerId || "",
+//   const existingCard = paymentMethods.data.find(
+//     (card: any) => card.card.last4 === newCard.card.last4
+//   );
+
+//   if (existingCard) {
+//     throw new ApiError(409, "This card is already saved.");
+//   } else {
+//     await stripe.paymentMethods.attach(paymentMethodId, {
+//       customer: customerId,
+//     });
+//     await stripe.paymentMethods.update(paymentMethodId, {
+//       billing_details: {
+//         name: cardholderName,
+//       },
+//     });
+//     return {
+//       message: "Customer created and card saved successfully",
+//     };
+//   }
+// };
+
+// const getSaveCardsFromStripe = async (userId: string) => {
+//   const user = await prisma.user.findUnique({ where: { id: userId } });
+//   if (!user) {
+//     throw new ApiError(404, "User not found!");
+//   }
+
+//   const saveCard = await stripe.paymentMethods.list({
+//     customer: user?.customerId || "",
+//     type: "card",
+//   });
+
+//   const cardDetails = saveCard.data.map((card: Stripe.PaymentMethod) => {
+//     return {
+//       id: card.id,
+//       brand: card.card?.brand,
+//       last4: card.card?.last4,
+//       type: card.card?.checks?.cvc_check === "pass" ? "valid" : "invalid",
+//       exp_month: card.card?.exp_month,
+//       exp_year: card.card?.exp_year,
+//       billing_details: card.billing_details,
+//     };
+//   });
+
+//   return cardDetails;
+// };
+
+// const deleteCardFromStripe = async (userId: string, last4: string) => {
+//   const user = await prisma.user.findUnique({ where: { id: userId } });
+//   if (!user) {
+//     throw new ApiError(404, "User not found!");
+//   }
+//   if (!user.customerId) {
+//     throw new ApiError(404, "Card is not saved");
+//   }
+
+//   const paymentMethods = await stripe.paymentMethods.list({
+//     customer: user.customerId,
+//     type: "card",
+//   });
+//   const card = paymentMethods.data.find(
+//     (card: any) => card.card.last4 === last4
+//   );
+//   if (!card) {
+//     throw new ApiError(404, "Card not found!");
+//   }
+//   await stripe.paymentMethods.detach(card.id);
+// };
+
+const createStripeProductAndPrice = async (tier: any) => {
+  const product = await stripe.products.create({
+    name: tier.title,
   });
 
-  const payment = await stripe.paymentIntents.create({
-    amount: Math.round(payload.amount * 100),
-    currency: payload?.paymentMethod || "usd",
-    payment_method: payload.paymentMethodId,
-    customer: findUser?.customerId as string,
-    confirm: true,
-    automatic_payment_methods: {
-      enabled: true,
-      allow_redirects: "never",
-    },
-  });
-
-  console.log(payment);
-
-  if (payment.status !== "succeeded") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Payment failed");
-  }
-
-  await prisma.payment.create({
-    data: {
-      userId: userId,
-      amount: payload.amount,
-      paymentMethod: payload.paymentMethod,
-      serviceId: payload.bookId,
-    },
-  });
-
-  return;
-};
-
-const saveCardInStripe = async (payload: {
-  paymentMethodId: string;
-  cardholderName?: string;
-  userId: string;
-}) => {
-  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
-  if (!user) {
-    throw new ApiError(404, "User not found!");
-  }
-  const { paymentMethodId, cardholderName } = payload;
-  let customerId = user.customerId;
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email as string,
-      payment_method: paymentMethodId,
-      invoice_settings: {
-        default_payment_method: paymentMethodId,
-      },
-    });
-    customerId = customer.id;
-    await prisma.user.update({
-      where: { id: payload.userId },
-      data: { customerId },
-    });
-  }
-
-  const paymentMethods = await stripe.paymentMethods.list({
-    customer: customerId,
-    type: "card",
-  });
-
-  const newCard: any = await stripe.paymentMethods.retrieve(paymentMethodId);
-
-  const existingCard = paymentMethods.data.find(
-    (card: any) => card.card.last4 === newCard.card.last4
-  );
-
-  if (existingCard) {
-    throw new ApiError(409, "This card is already saved.");
-  } else {
-    await stripe.paymentMethods.attach(paymentMethodId, {
-      customer: customerId,
-    });
-    await stripe.paymentMethods.update(paymentMethodId, {
-      billing_details: {
-        name: cardholderName,
-      },
-    });
-    return {
-      message: "Customer created and card saved successfully",
-    };
-  }
-};
-
-const getSaveCardsFromStripe = async (userId: string) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) {
-    throw new ApiError(404, "User not found!");
-  }
-
-  const saveCard = await stripe.paymentMethods.list({
-    customer: user?.customerId || "",
-    type: "card",
-  });
-
-  const cardDetails = saveCard.data.map((card: Stripe.PaymentMethod) => {
-    return {
-      id: card.id,
-      brand: card.card?.brand,
-      last4: card.card?.last4,
-      type: card.card?.checks?.cvc_check === "pass" ? "valid" : "invalid",
-      exp_month: card.card?.exp_month,
-      exp_year: card.card?.exp_year,
-      billing_details: card.billing_details,
-    };
-  });
-
-  return cardDetails;
-};
-
-const deleteCardFromStripe = async (userId: string, last4: string) => {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) {
-    throw new ApiError(404, "User not found!");
-  }
-  if (!user.customerId) {
-    throw new ApiError(404, "Card is not saved");
-  }
-
-  const paymentMethods = await stripe.paymentMethods.list({
-    customer: user.customerId,
-    type: "card",
-  });
-  const card = paymentMethods.data.find(
-    (card: any) => card.card.last4 === last4
-  );
-  if (!card) {
-    throw new ApiError(404, "Card not found!");
-  }
-  await stripe.paymentMethods.detach(card.id);
-};
-
-const transferAmountFromStripe = async (payload: {
-  amount: number;
-  connectAccountId: string;
-}) => {
-  const transfer = await stripe.transfers.create({
-    amount: Math.round(payload.amount * 0.92 * 100),
+  const price = await stripe.prices.create({
+    product: product.id,
+    unit_amount: Math.round(tier.amount * 100),
     currency: "usd",
-    destination: payload.connectAccountId, // Connect account ID
-    source_type: "card",
+    recurring: { interval: "month" },
   });
 
-  return transfer;
+  return { product, price };
 };
 
-const refundPaymentFromStripe = async (id: string) => {
-  const findPayment = await prisma.payment.findUnique({
-    where: {
-      serviceId: id,
-    },
-  });
-  if (!findPayment) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Payment not found!");
+const getOrCreateCustomer = async (user: any, paymentMethodId: string) => {
+  if (user.customerId) {
+    return user.customerId;
   }
 
-  const payment = await stripe.refunds.create({
-    payment_intent: findPayment?.paymentId || "",
-    amount: Math.round(findPayment.amount * 100), // Amount in cents
-  });
-  return payment;
-};
-
-const subscribeToPlanFromStripe = async (payload: {
-  subscriptionId: string;
-  userId: string;
-  paymentMethodId: string;
-}) => {
-  const findUser = await prisma.user.findUnique({
-    where: {
-      id: payload.userId,
-    },
-  });
-  if (!findUser) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  }
-
-  if (findUser?.customerId === null) {
-    await createStripeCustomerAcc(findUser);
-  }
-
-  const findSubscription = await prisma.subscription.findUnique({
-    where: {
-      id: payload.subscriptionId,
-    },
-  });
-  if (!findSubscription) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Subscription not found!");
-  }
-
-  await stripe.paymentMethods.attach(payload.paymentMethodId, {
-    customer: findUser.customerId as string,
-  });
-
-  await stripe.customers.update(findUser.customerId as string, {
+  const customer = await stripe.customers.create({
+    email: user.email,
+    payment_method: paymentMethodId,
     invoice_settings: {
-      default_payment_method: payload.paymentMethodId,
+      default_payment_method: paymentMethodId,
     },
   });
 
-  const purchasePlan = (await stripe.subscriptions.create({
-    customer: findUser.customerId as string,
-    items: [{ price: findSubscription.stripePriceId }],
-  })) as any;
-
-  const subscriptionItem = purchasePlan.items.data[0];
-
-  const updateUserPlan = await prisma.subscriptionUser.upsert({
-    where: {
-      userId: payload.userId,
-    },
-    update: {
-      subscriptionPlanId: payload?.subscriptionId, // or map to your internal plan name
-      subscriptionId: purchasePlan?.id,
-      subscriptionStatus: purchasePlan.status,
-      subscriptionStart: new Date(subscriptionItem.current_period_start * 1000),
-      subscriptionEnd: new Date(subscriptionItem.current_period_end * 1000),
-    },
-    create: {
-      userId: payload.userId,
-      subscriptionPlanId: payload?.subscriptionId, // or map to your internal plan name
-      subscriptionId: purchasePlan?.id,
-      subscriptionStatus: purchasePlan.status,
-      subscriptionStart: new Date(subscriptionItem.current_period_start * 1000),
-      subscriptionEnd: new Date(subscriptionItem.current_period_end * 1000),
-    },
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { customerId: customer.id },
   });
 
-  //   await prisma.user.update({
-  //     where: {
-  //       id: payload.userId,
-  //     },
-  //     data: {
-  //       subscriptionPlan:
-  //         findSubscription.name.split(" ")[0] == "Basic" ? "BASIC" : "PRO",
-  //     },
-  //   });
-
-  return updateUserPlan;
+  return customer.id;
 };
 
-const cancelSubscriptionFromStripe = async (payload: { userId: string }) => {
-  const findUser = await prisma.user.findUnique({
-    where: {
-      id: payload.userId,
-    },
-    include: {
-      SubscriptionUser: true, // assuming relation name is `subscriptionDetails`
+const createStripeSubscription = async ({
+  customerId,
+  priceId,
+  providerAccountId, // connected account id
+  tierAmount,
+}: {
+  customerId: string;
+  priceId: string;
+  providerAccountId: string;
+  tierAmount: number;
+}) => {
+  const subscription = await stripe.subscriptions.create({
+    customer: customerId,
+    items: [{ price: priceId }],
+    payment_behavior: "default_incomplete",
+    expand: ["latest_invoice.payment_intent"],
+    application_fee_percent: 10,
+    transfer_data: {
+      destination: providerAccountId,
     },
   });
 
-  if (!findUser) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  }
+  return subscription;
+};
 
-  if (!findUser.SubscriptionUser?.subscriptionId) {
+const joinTier = async (userId: string, body: any, files: any) => {
+  const image = files.banner?.[0]?.location;
+  const {
+    tierId,
+    clubOrPlayerUserId: providerId,
+    content,
+    paymentMethodId,
+  } = body;
+
+  const tier = await prisma.tier.findUnique({ where: { id: tierId } });
+  if (!tier) throw new ApiError(StatusCodes.NOT_FOUND, "Tier not found!");
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { BrandInfo: true, IndividualInfo: true },
+  });
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+
+  const provider = await prisma.user.findUnique({ where: { id: providerId } });
+  if (!provider || !provider.connectAccountId)
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Provider not connected to Stripe!"
+    );
+
+  if (user.profileRole !== tier.type)
+    throw new ApiError(StatusCodes.FORBIDDEN, "Forbidden!");
+
+  // get or create Stripe customer
+  const customerId = await getOrCreateCustomer(user, paymentMethodId);
+
+  // get product/price for tier
+  const { price } = await createStripeProductAndPrice(tier);
+
+  // create subscription
+  const subscription = await createStripeSubscription({
+    customerId,
+    priceId: price.id,
+    providerAccountId: provider.connectAccountId,
+    tierAmount: tier.amount,
+  });
+
+  // store subscription in DB
+  await prisma.subscribedUser.create({
+    data: {
+      customerId,
+      subscriptionStatus: "ACTIVE",
+      subscriptionId: subscription.id,
+      recipientUserId: providerId,
+    },
+  });
+
+  //post work
+
+  const brandInfo = await prisma.brandInfo.findUnique({ where: { userId } });
+  if (!brandInfo)
+    throw new ApiError(StatusCodes.NOT_FOUND, "Brand info not found!");
+
+  const clubORAthleteUser = await prisma.user.findUnique({
+    where: { id: providerId, status: "ACTIVE" },
+    include: {
+      AthleteInfo: true,
+      ClubInfo: true,
+    },
+  });
+
+  if (!clubORAthleteUser)
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
+
+  if (image && !tier.showBanner)
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "User does not have an active subscription!"
+      "You cannot upload a banner for this tier!"
     );
-  }
+  if (content && !tier.showContent)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot upload content for this tier!"
+    );
 
-  // Cancel the subscription at Stripe
-  const cancelledSubscription = await stripe.subscriptions.update(
-    findUser.SubscriptionUser?.subscriptionId as string,
+  if (brandInfo && !tier.showProfile)
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot upload a profile for this tier!"
+    );
+
+  const post = await prisma.post.create({
+    data: {
+      userId: providerId,
+      content: tier.showContent ? content : undefined,
+      image: tier.showBanner ? image : undefined,
+      brandInfoId: tier.showProfile ? brandInfo.id : undefined,
+      isSponsored: true,
+    },
+  });
+
+  //create donor and recipient
+
+  const recipient = await prisma.recipient.create({
+    data: {
+      userId: providerId as string,
+      tierId: tierId as string,
+      amount: tier.amount,
+      postId: post.id,
+    },
+  });
+
+  await prisma.donor.create({
+    data: {
+      userId: userId,
+      tierId: tierId as string,
+      amount: tier.amount,
+      recipientId: recipient.id as string,
+      recipientUserId: providerId as string,
+      postId: post.id,
+    },
+  });
+
+  // //create room for chat
+
+  // await prisma.room.create({
+  //   data: {
+  //     senderId: userId,
+  //     receiverId: providerId,
+  //   },
+  // });
+
+  // Make a transaction history
+
+  await prisma.transactions.create({
+    data: {
+      senderId: userId,
+      recipientId: providerId,
+      amount: tier.amount,
+      earningType: tier.type === "BRAND" ? "SPONSOR" : "SUPPORT",
+      tierId: tier.id,
+    },
+  });
+
+  // Donor notification
+  await notificationServices.sendSingleNotification(providerId, userId, {
+    title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
+    image:
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.profileImage
+        : clubORAthleteUser?.ClubInfo?.logoImage,
+    body: `You’ve successfully subscribed to ${
+      clubORAthleteUser?.profileRole === "ATHLETE"
+        ? clubORAthleteUser?.AthleteInfo?.fullName
+        : clubORAthleteUser?.ClubInfo?.clubName
+    } with $${tier.amount}/month. Thank you for your support.`,
+  });
+
+  // Recipient notification
+  await notificationServices.sendSingleNotification(userId, providerId, {
+    title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
+    image:
+      user.profileRole === "BRAND"
+        ? user.BrandInfo?.logoImage
+        : user.IndividualInfo?.profileImage,
+    body: `${
+      user.profileRole === "BRAND"
+        ? user.BrandInfo?.brandName
+        : user.IndividualInfo?.fullName
+    } has successfully subscribed to your ${
+      tier.type === "BRAND" ? "Sponsorship" : "Support"
+    } Tier with $${tier.amount}/month.`,
+  });
+
+  // Admin notifications
+
+  await notificationServices.sendSingleNotification(
+    userId,
+    "6890552809eee7b6eb0593e3",
     {
-      cancel_at_period_end: true, // Cancels at end of current billing period
+      title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
+      role: "ADMIN",
+      image:
+        clubORAthleteUser?.profileRole === "ATHLETE"
+          ? clubORAthleteUser?.AthleteInfo?.profileImage
+          : clubORAthleteUser?.ClubInfo?.logoImage,
+      body: `${
+        user.profileRole === "BRAND"
+          ? user.BrandInfo?.brandName
+          : user.IndividualInfo?.fullName
+      } successfully subscribed to ${
+        clubORAthleteUser?.profileRole === "ATHLETE"
+          ? clubORAthleteUser?.AthleteInfo?.fullName
+          : clubORAthleteUser?.ClubInfo?.clubName
+      } with $${tier.amount}/month. Thank you for your support.`,
     }
   );
 
-  // Update DB with status
-  const updateUserSubscription = await prisma.subscriptionUser.update({
-    where: {
-      userId: payload.userId,
-    },
-    data: {
-      subscriptionStatus: cancelledSubscription.status, // should be "active" but set to cancel later
-    },
-  });
+  const message = `Successfully ${
+    tier.type === "BRAND" ? "sponsored" : "supported"
+  } tier on ${
+    clubORAthleteUser?.profileRole === "CLUB"
+      ? clubORAthleteUser.ClubInfo?.clubName
+      : clubORAthleteUser?.AthleteInfo?.fullName
+  } profile`;
 
-  return cancelledSubscription;
+  return {
+    message,
+    subscriptionId: subscription.id,
+  };
 };
-
 const splitPaymentFromStripe = async (payload: {
   amount: number;
   paymentMethodId: string;
@@ -341,149 +408,6 @@ const splitPaymentFromStripe = async (payload: {
 
   return payment;
 };
-
-const joinTier = async (userId: string, body: any, files: any) => {
-  const image = files.banner?.[0]?.location;
-  const {
-    tierId,
-    clubOrPlayerUserId: providerId,
-    content,
-    paymentMethodId,
-  } = body;
-
-  const tier = await prisma.tier.findUnique({
-    where: { id: tierId },
-  });
-
-  if (!tier) throw new ApiError(StatusCodes.NOT_FOUND, "Tier not found!");
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-  if (tier.type !== user.profileRole)
-    throw new ApiError(StatusCodes.FORBIDDEN, "User is not a brand!");
-  if (user.profileRole !== tier.type)
-    throw new ApiError(StatusCodes.FORBIDDEN, "User is not an individual!");
-
-  const brandInfo = await prisma.brandInfo.findUnique({ where: { userId } });
-  if (!brandInfo)
-    throw new ApiError(StatusCodes.NOT_FOUND, "Brand info not found!");
-
-  const clubORAthleteUser = await prisma.user.findUnique({
-    where: { id: providerId, status: "ACTIVE" },
-    include: {
-      AthleteInfo: true,
-      ClubInfo: true,
-    },
-  });
-
-  if (!clubORAthleteUser)
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
-
-  const paymentdata = {
-    providerId,
-    paymentMethodId,
-    amount: tier.amount,
-    paymentMethod: "usd",
-  };
-
-  if (image && !tier.showBanner)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "You cannot upload a banner for this tier!"
-    );
-  if (content && !tier.showContent)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "You cannot upload content for this tier!"
-    );
-
-  if (brandInfo && !tier.showProfile)
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "You cannot upload a profile for this tier!"
-    );
-
-  await splitPaymentFromStripe(paymentdata);
-
-  const post = await prisma.post.create({
-    data: {
-      userId: providerId,
-      content: tier.showContent ? content : undefined,
-      image: tier.showBanner ? image : undefined,
-      brandInfoId: tier.showProfile ? brandInfo.id : undefined,
-      isSponsored: true,
-    },
-  });
-
-  //create donor and recipient
-
-  const recipient = await prisma.recipient.create({
-    data: {
-      userId: providerId as string,
-      tierId: tierId as string,
-      amount: tier.amount,
-      postId: post.id,
-    },
-  });
-
-  await prisma.donor.create({
-    data: {
-      userId: userId,
-      tierId: tierId as string,
-      amount: tier.amount,
-      recipientId: recipient.id as string,
-      recipientUserId: providerId as string,
-      postId: post.id,
-    },
-  });
-
-  //create room for chat
-
-  await prisma.room.create({
-    data: {
-      senderId: userId,
-      receiverId: providerId,
-    },
-  });
-
-  // Make a transaction history
-
-  await prisma.transactions.create({
-    data: {
-      senderId: userId,
-      recipientId: providerId,
-      amount: tier.amount,
-      earningType: tier.type === "BRAND" ? "SPONSOR" : "SUPPORT",
-      tierId: tier.id,
-    },
-  });
-
-  await notificationServices.sendSingleNotification(providerId, userId, {
-    title: `New ${tier.type === "BRAND" ? "Sponsorship" : "Support"} Tier`,
-    image:
-      clubORAthleteUser?.profileRole === "ATHLETE"
-        ? clubORAthleteUser?.AthleteInfo?.profileImage
-        : clubORAthleteUser?.ClubInfo?.logoImage,
-    body: `You’ve successfully subscribed to ${
-      clubORAthleteUser?.profileRole === "ATHLETE"
-        ? clubORAthleteUser?.AthleteInfo?.fullName
-        : clubORAthleteUser?.ClubInfo?.clubName
-    } with $${tier.amount}/month. Thank you for your support.`,
-  });
-
-  const message = `Successfully ${
-    tier.type === "BRAND" ? "sponsored" : "supported"
-  } tier on ${
-    clubORAthleteUser?.profileRole === "CLUB"
-      ? clubORAthleteUser.ClubInfo?.clubName
-      : clubORAthleteUser?.AthleteInfo?.fullName
-  } profile`;
-
-  return message;
-};
-
 const quickSupport = async (
   amount: number,
   providerId: string,
@@ -497,6 +421,14 @@ const quickSupport = async (
     paymentMethod: "usd",
   };
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      BrandInfo: true,
+      IndividualInfo: true,
+    },
+  });
+
   const clubORAthleteUser = await prisma.user.findUnique({
     where: { id: providerId, status: "ACTIVE" },
     include: {
@@ -510,6 +442,7 @@ const quickSupport = async (
 
   await splitPaymentFromStripe(paymentdata);
 
+  // donor notifications
   await notificationServices.sendSingleNotification(providerId, userId, {
     title: "Quick Support",
     image:
@@ -523,6 +456,44 @@ const quickSupport = async (
     }. Thank you for your support.`,
   });
 
+  // Recipient notification
+  await notificationServices.sendSingleNotification(userId, providerId, {
+    title: `New Quick support`,
+    image:
+      user?.profileRole === "BRAND"
+        ? user?.BrandInfo?.logoImage
+        : user?.IndividualInfo?.profileImage,
+    body: `${
+      user?.profileRole === "BRAND"
+        ? user?.BrandInfo?.brandName
+        : user?.IndividualInfo?.fullName
+    } has successfully subscribed to your ${amount} `,
+  });
+
+  // Admin notifications
+
+  await notificationServices.sendSingleNotification(
+    userId,
+    "6890552809eee7b6eb0593e3",
+    {
+      title: `New Quick support`,
+      role: "ADMIN",
+      image:
+        clubORAthleteUser?.profileRole === "ATHLETE"
+          ? clubORAthleteUser?.AthleteInfo?.profileImage
+          : clubORAthleteUser?.ClubInfo?.logoImage,
+      body: `${
+        user?.profileRole === "BRAND"
+          ? user?.BrandInfo?.brandName
+          : user?.IndividualInfo?.fullName
+      } successfully subscribed to ${
+        clubORAthleteUser?.profileRole === "ATHLETE"
+          ? clubORAthleteUser?.AthleteInfo?.fullName
+          : clubORAthleteUser?.ClubInfo?.clubName
+      } with $${amount}/month. Thank you for your support.`,
+    }
+  );
+
   await prisma.transactions.create({
     data: {
       senderId: userId,
@@ -535,16 +506,42 @@ const quickSupport = async (
   });
 };
 
+const cancelSubscription = async (userId: string, recipientId: string) => {
+  // find the subscription in DB
+  const subscribedUser = await prisma.subscribedUser.findFirst({
+    where: {
+      customerId: userId,
+      recipientUserId: recipientId,
+      subscriptionStatus: "ACTIVE",
+    },
+  });
+
+  if (!subscribedUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Active subscription not found!");
+  }
+
+  // cancel on Stripe immediately
+  const subscription = await stripe.subscriptions.cancel(
+    subscribedUser.subscriptionId
+  );
+
+  // update in DB
+  await prisma.subscribedUser.update({
+    where: { id: subscribedUser.id },
+    data: {
+      subscriptionStatus: "CANCELED",
+      updatedAt: new Date(),
+    },
+  });
+
+  return {
+    message: "Subscription canceled successfully",
+    subscription,
+  };
+};
+
 export const paymentService = {
-  createIntentInStripe,
-  saveCardInStripe,
-  getSaveCardsFromStripe,
-  deleteCardFromStripe,
-  splitPaymentFromStripe,
-  transferAmountFromStripe,
-  refundPaymentFromStripe,
-  subscribeToPlanFromStripe,
-  cancelSubscriptionFromStripe,
   joinTier,
   quickSupport,
+  cancelSubscription,
 };

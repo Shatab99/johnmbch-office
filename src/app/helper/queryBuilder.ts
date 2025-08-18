@@ -5,7 +5,8 @@ interface QueryOptions {
   query: any;
   searchableFields?: string[];
   forcedFilters?: Record<string, any>; // 👈 new
-  includes?: Record<string, any>; // 👈 optional includes for relations
+  includes?: Record<string, any>;
+  role?: string;
 }
 
 export const dynamicQueryBuilder = async ({
@@ -21,6 +22,7 @@ export const dynamicQueryBuilder = async ({
     search,
     sortBy = "createdAt",
     order = "desc",
+
     ...filters
   } = query;
 
@@ -44,7 +46,7 @@ export const dynamicQueryBuilder = async ({
         }
       : {};
 
-  const { sportName, ...restFilters } = filters;
+  const { sportName, country, countryName, ...restFilters } = filters;
 
   const relationFilter: any[] = [];
 
@@ -54,6 +56,28 @@ export const dynamicQueryBuilder = async ({
         AthleteInfo: { sportName: { equals: sportName, mode: "insensitive" } },
       },
       { ClubInfo: { sportName: { equals: sportName, mode: "insensitive" } } }
+    );
+
+  if (country)
+    relationFilter.push(
+      {
+        AthleteInfo: { country: { equals: country, mode: "insensitive" } },
+      },
+      { ClubInfo: { country: { equals: country, mode: "insensitive" } } }
+    );
+
+  if (countryName)
+    relationFilter.push(
+      {
+        BrandInfo: {
+          country: { equals: countryName, mode: "insensitive" },
+        },
+      },
+      {
+        IndividualInfo: {
+          country: { equals: countryName, mode: "insensitive" },
+        },
+      }
     );
 
   const filterConditions = {

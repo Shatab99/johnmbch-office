@@ -57,6 +57,11 @@ const createPostInDb = async (postData: any, files: any) => {
       StatusCodes.UNAUTHORIZED,
       "Brand profile cannot create posts !"
     );
+  if (user.profileRole === "INDIVIDUAL")
+    throw new ApiError(
+      StatusCodes.UNAUTHORIZED,
+      "Supporter cannot create posts !"
+    );
 
   await prisma.post.create({
     data: {

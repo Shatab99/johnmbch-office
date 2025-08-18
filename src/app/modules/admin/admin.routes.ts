@@ -132,4 +132,12 @@ router.get(
   managementControllers.manageSupporterSponsorsDetails
 );
 
+//-------------------notifications-------------
+
+router.get(
+  "/get-notifications",
+  auth(Role.ADMIN),
+  adminController.getAllNotifications
+);
+
 export const adminRoutes = router;

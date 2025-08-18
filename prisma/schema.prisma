@@ -14,21 +14,20 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(auto()) @map("_id") @db.ObjectId
-  email            String            @unique
+  id               String       @id @default(auto()) @map("_id") @db.ObjectId
+  email            String       @unique
   AdminName        String?
-  role             Role              @default(USER)
-  status           Status            @default(ACTIVE)
+  role             Role         @default(USER)
+  status           Status       @default(ACTIVE)
   coverImage       String?
   password         String
   fcmToken         String?
   profileRole      ProfileRole?
   customerId       String?
   connectAccountId String?
-  subscriptionPlan SubscriptionPlan?
-  isVerified       Boolean           @default(false)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  isVerified       Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   athleteInfoId String?      @db.ObjectId
   AthleteInfo   AthleteInfo? @relation(fields: [athleteInfoId], references: [id])
@@ -42,9 +41,8 @@ model User {
   Post  Post[]
   likes Like[]
 
-  receiver         Notifications[]   @relation("receiverDetails")
-  sender           Notifications[]   @relation("senderDetails")
-  SubscriptionUser SubscriptionUser?
+  receiver Notifications[] @relation("receiverDetails")
+  sender   Notifications[] @relation("senderDetails")
 
   // chat relations
   chatsSent            Chat[]          @relation("SenderRelation")
@@ -327,39 +325,11 @@ model Payment {
   updatedAt     DateTime @updatedAt
 }
 
-model Subscription {
-  id               String            @id @default(auto()) @map("_id") @db.ObjectId
-  name             String
-  stripeProductId  String
-  stripePriceId    String
-  price            Float
-  description      String
-  currency         String
-  interval         String?
-  status           Status            @default(ACTIVE)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  SubscriptionUser SubscriptionUser?
-}
-
-model SubscriptionUser {
-  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
-  userId             String       @unique @db.ObjectId
-  subscriptionPlanId String       @unique @db.ObjectId // E.g., "basic", "premium", etc.
-  subscriptionId     String // Stripe subscription ID
-  subscriptionStatus String // E.g., "active", "canceled", "incomplete"
-  subscriptionStart  DateTime // When the subscription started
-  subscriptionEnd    DateTime // When it ends (for trial or cancel)
-  userDetails        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subscriptionPlan   Subscription @relation(fields: [subscriptionPlanId], references: [id], onDelete: Cascade)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
-}
-
 model Notifications {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   receiverId String   @db.ObjectId
   image      String?
+  role       Role?
   senderId   String?  @db.ObjectId
   title      String
   body       String
@@ -382,13 +352,17 @@ enum Status {
   BLOCKED
 }
 
-enum SubscriptionPlan {
-  BASIC
-  PRO
-  EXPIRED
+model SubscribedUser {
+  id                 String             @id @default(auto()) @map("_id") @db.ObjectId
+  recipientUserId    String             @db.ObjectId
+  customerId         String
+  subscriptionId     String
+  subscriptionStatus SubscriptionStatus @default(ACTIVE)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 enum SubscriptionStatus {
   ACTIVE
-  CANCELLED
+  CANCELED
 }

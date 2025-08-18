@@ -23,48 +23,6 @@ import ApiError from "../../error/ApiErrors";
 //   }
 // );
 
-const saveCardController = catchAsync(async (req: Request, res: Response) => {
-  const body = req.body as any;
-  const { id: userId } = req.user;
-  const payload = { ...body, userId };
-
-  const result = await paymentService.saveCardInStripe(payload);
-  sendResponse(res, {
-    statusCode: StatusCodes.CREATED,
-    message: "Card saved successfully",
-    data: result,
-    success: true,
-  });
-});
-
-const getSaveCardController = catchAsync(
-  async (req: Request, res: Response) => {
-    const { id: userId } = req.user;
-    const result = await paymentService.getSaveCardsFromStripe(userId);
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      message: "Card saved successfully",
-      data: result,
-      success: true,
-    });
-  }
-);
-
-const deleteCardController = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body as any;
-  const { id: userId } = req.user;
-  const result = await paymentService.deleteCardFromStripe(
-    userId,
-    payload.last4
-  );
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    message: "Card deleted successfully",
-    data: result,
-    success: true,
-  });
-});
-
 const getTiersController = catchAsync(async (req: Request, res: Response) => {
   const result = await adminService.getAllTiers(req.query);
   sendResponse(res, {
@@ -96,8 +54,8 @@ const quickSupport = catchAsync(async (req: Request, res: Response) => {
   const result = await paymentService.quickSupport(
     amount,
     providerId,
+    paymentMethodId,
     userId,
-    paymentMethodId
   );
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -107,14 +65,29 @@ const quickSupport = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const { recipientId } = req.params;
 
+  const result = await paymentService.cancelSubscription(
+    userId,
+    recipientId
+  );
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    message: "Subscription canceled successfully",
+    data: result,
+    success: true,
+  });
+});
 
 export const paymentController = {
   // createPaymentController,
-  saveCardController,
-  getSaveCardController,
-  deleteCardController,
+  // saveCardController,
+  // getSaveCardController,
+  // deleteCardController,
   getTiersController,
   joinTierController,
   quickSupport,
+  cancelSubscription,
 };

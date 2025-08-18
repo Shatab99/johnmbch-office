@@ -1,40 +1,41 @@
-import nodemailer from 'nodemailer';
-import { stripe } from '../../config/stripe';
-export const StripeConnectAccEmail = async (user: any) => {
+import nodemailer from "nodemailer";
+import { stripe } from "../../config/stripe";
+export const StripeConnectAccEmail = async (
+  accountLink: string,
+  email: string
+) => {
+  // const accountLink = await stripe.accountLinks.create({
+  //     account: user.connectAccountId as string,
+  //     refresh_url: "https://success-page-xi.vercel.app/not-success",
+  //     return_url: "https://success-page-xi.vercel.app/success",
+  //     type: "account_onboarding",
+  // });
 
-    const accountLink = await stripe.accountLinks.create({
-        account: user.connectAccountId as string,
-        refresh_url: "https://success-page-xi.vercel.app/not-success",
-        return_url: "https://success-page-xi.vercel.app/success",
-        type: "account_onboarding",
-    });
+  const transporter = nodemailer.createTransport({
+    service: "gmail", // Use your email service provider
+    auth: {
+      user: process.env.ADMIN_MAIL, // Your email address
+      pass: process.env.MAIL_PASS, // Your email password
+    },
+  });
 
-    const transporter = nodemailer.createTransport({
-        service: 'gmail', // Use your email service provider
-        auth: {
-            user: process.env.ADMIN_MAIL, // Your email address
-            pass: process.env.MAIL_PASS // Your email password
-        }
-    });
-
-
-    const htmlContent = `
+  const htmlContent = `
 <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; color: #333; border: 1px solid #ddd; border-radius: 10px;">
   <h2 style="color: #007bff; text-align: center;">Complete Your Onboarding</h2>
 
-  <p>Dear <b>${user.name}</b>,</p>
+  <p>Hello there,</p>
 
   <p>We’re excited to have you onboard! To get started, please complete your onboarding process by clicking the link below:</p>
 
   <div style="text-align: center; margin: 20px 0;">
-    <a href=${accountLink.url} style="background-color: #007bff; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
+    <a href=${accountLink} style="background-color: #007bff; color: #fff; padding: 12px 20px; border-radius: 5px; text-decoration: none; font-weight: bold;">
       Complete Onboarding
     </a>
   </div>
 
   <p>If the button above doesn’t work, you can also copy and paste this link into your browser:</p>
   <p style="word-break: break-all; background-color: #f4f4f4; padding: 10px; border-radius: 5px;">
-    ${accountLink.url}
+    ${accountLink}
   </p>
 
   <p><b>Note:</b> This link is valid for a limited time. Please complete your onboarding as soon as possible.</p>
@@ -48,14 +49,13 @@ export const StripeConnectAccEmail = async (user: any) => {
   </p>
 </div>
 `;
-    const mailOptions = {
-        from: '"Connected Account" <mahmudhasan.hb@gmail.com>', // Sender address
-        to: user.email, // List of receivers
-        subject: 'Your OTP Code', // Subject line
-        // text: `Your OTP code is ${otp}` // Plain text body
-        html: htmlContent
-    };
+  const mailOptions = {
+    from: '"Connected Account" <mahmudhasan.hb@gmail.com>', // Sender address
+    to: email, // List of receivers
+    subject: "Your OTP Code", // Subject line
+    // text: `Your OTP code is ${otp}` // Plain text body
+    html: htmlContent,
+  };
 
-    await transporter.sendMail(mailOptions);
-
-}
+  await transporter.sendMail(mailOptions);
+};

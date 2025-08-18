@@ -1,9 +1,10 @@
-import express from 'express';
-import { notificationController } from './notification.controller';
+import express from "express";
+import { notificationController } from "./notification.controller";
 
 import { NotificationValidation } from "./notification.validation";
-import validateRequest from '../../middleware/validateRequest';
-import auth from '../../middleware/auth';
+import validateRequest from "../../middleware/validateRequest";
+import auth from "../../middleware/auth";
+import { Role } from "@prisma/client";
 
 const router = express.Router();
 
@@ -21,11 +22,15 @@ router.post(
   notificationController.sendNotifications
 );
 
-router.get('/', auth(), notificationController.getNotifications);
 router.get(
-  '/:notificationId',
+  "/",
+  auth(Role.USER, Role.ADMIN),
+  notificationController.getNotifications
+);
+router.get(
+  "/:notificationId",
   auth(),
-  notificationController.getSingleNotificationById,
+  notificationController.getSingleNotificationById
 );
 
 export const NotificationsRouters = router;
