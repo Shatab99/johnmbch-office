@@ -202,7 +202,7 @@ model Like {
   User   User   @relation(fields: [userId], references: [id])
 
   postId String @db.ObjectId
-  Post   Post   @relation(fields: [postId], references: [id])
+  Post   Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

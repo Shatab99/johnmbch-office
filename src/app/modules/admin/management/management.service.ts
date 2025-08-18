@@ -201,6 +201,11 @@ const deletePost = async (postId: string) => {
   await prisma.post.delete({
     where: { id: postId },
   });
+
+  await prisma.like.deleteMany({
+    where: { postId },
+  });
+
   return "successfully deleted";
 };
 const changeStatus = async (
