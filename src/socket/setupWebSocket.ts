@@ -128,7 +128,7 @@ export async function setupWebSocket(server: Server) {
           }
 
           case "fetchChats": {
-            const { receiverId } = parsedData;
+            const { receiverId, page, limit } = parsedData;
             if (!ws.userId) {
               console.log("User not authenticated");
               return;
@@ -166,9 +166,12 @@ export async function setupWebSocket(server: Server) {
               return;
             }
 
+            const skip = (page - 1) * limit;
             const chats = await prisma.chat.findMany({
               where: { roomId: room.id },
               orderBy: { createdAt: "asc" },
+              skip,
+              take: limit,
             });
 
             await prisma.chat.updateMany({
