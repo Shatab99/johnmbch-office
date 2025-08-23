@@ -169,7 +169,7 @@ export async function setupWebSocket(server: Server) {
             const skip = (page - 1) * limit || 0;
             const chats = await prisma.chat.findMany({
               where: { roomId: room.id },
-              orderBy: { createdAt: "asc" },
+              orderBy: { createdAt: "desc" },
               skip,
               take: limit || undefined, // here if no limit given from the json body it will project whole data
             });
