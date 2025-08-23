@@ -61,7 +61,7 @@ const logInFromDB = async (payload: {
 };
 
 const verifyOtp = async (payload: { email: string; otp: number }) => {
-  const { message } = await OTPVerify({ ...payload, time: "24h" });
+  const { message, accessToken } = await OTPVerify({ ...payload, time: "24h" });
 
   if (message) {
     const updateUserInfo = await prisma.user.update({
@@ -83,7 +83,7 @@ const verifyOtp = async (payload: { email: string; otp: number }) => {
       },
     });
     await createStripeCustomerAcc(updateUserInfo);
-    return updateUserInfo;
+    return { updateUserInfo, accessToken };
   }
 };
 
