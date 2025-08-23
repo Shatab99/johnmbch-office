@@ -87,7 +87,7 @@ const getInboxPreview = async (userId: string) => {
     },
     include: {
       chat: {
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "asc" },
         take: 1,
       },
       sender: {
@@ -110,7 +110,7 @@ const getInboxPreview = async (userId: string) => {
     orderBy: { createdAt: "desc" },
   });
 
-  const admin = await prisma.adminProfile.findFirst({})
+  const admin = await prisma.adminProfile.findFirst({});
 
   return rooms.map((room: any) => {
     const otherUser = room.senderId === userId ? room.receiver : room.sender;
@@ -132,7 +132,9 @@ const getInboxPreview = async (userId: string) => {
           otherUser?.BrandInfo?.logoImage ||
           (otherUser.role === "ADMIN" ? admin?.adminImage : null),
       },
-      lastMessage: latestMessage?.message || "Sent an image",
+      lastMessage: latestMessage.message
+        ? latestMessage.message
+        : "Sent an image",
       time: latestMessage?.createdAt || room.updatedAt,
       unreadCount: 0,
     };
