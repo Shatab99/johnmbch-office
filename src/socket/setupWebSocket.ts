@@ -271,65 +271,80 @@ export async function setupWebSocket(server: Server) {
                 },
                 include: {
                   chat: {
-                    orderBy: {
-                      createdAt: "desc",
+                    orderBy: { createdAt: "desc" }, // latest message
+                    take: 1,
+                  },
+                  sender: {
+                    include: {
+                      AthleteInfo: true,
+                      ClubInfo: true,
+                      BrandInfo: true,
+                      IndividualInfo: true,
                     },
-                    take: 1, // Fetch only the latest message for each room
+                  },
+                  receiver: {
+                    include: {
+                      AthleteInfo: true,
+                      ClubInfo: true,
+                      BrandInfo: true,
+                      IndividualInfo: true,
+                    },
                   },
                 },
+                orderBy: { updatedAt: "desc" }, // sort inbox by activity
               });
 
-              // Extract the relevant user IDs from the rooms
-              const userIds = rooms.map((room) => {
-                return room.senderId === ws.userId
-                  ? room.receiverId
-                  : room.senderId;
-              });
+              // Fetch admin info once for ADMIN fallback
+              const admin = await prisma.adminProfile.findFirst({});
 
-              // Fetch user profiles for the corresponding user IDs
-              const userInfos = await prisma.user.findMany({
-                where: {
-                  id: {
-                    in: userIds,
-                  },
-                },
-                // include: {
-                //   AthleteInfo: true,
-                //   ClubInfo: true,
-                //   BrandInfo: true,
-                // },
-              });
-
-              // Combine user info with their last message
-              const userWithLastMessages = rooms.map((room) => {
-                const otherUserId =
-                  room.senderId === ws.userId ? room.receiverId : room.senderId;
-                const userInfo = userInfos.find(
-                  (userInfo) => userInfo.id === otherUserId
-                );
+              // Shape the data like getInboxPreview
+              const inboxData = rooms.map((room: any) => {
+                const otherUser =
+                  room.senderId === ws.userId ? room.receiver : room.sender;
+                const latestMessage = room.chat[0];
 
                 return {
-                  user: userInfo || null,
-                  lastMessage: room.chat[0] || null,
+                  user: {
+                    receiverId: otherUser.id,
+                    name:
+                      otherUser?.AthleteInfo?.fullName ||
+                      otherUser?.ClubInfo?.clubName ||
+                      otherUser?.IndividualInfo?.fullName ||
+                      otherUser?.BrandInfo?.brandName ||
+                      (otherUser.role === "ADMIN" ? "Admin" : "Unknown"),
+                    image:
+                      otherUser?.AthleteInfo?.profileImage ||
+                      otherUser?.ClubInfo?.logoImage ||
+                      otherUser?.IndividualInfo?.profileImage ||
+                      otherUser?.BrandInfo?.logoImage ||
+                      (otherUser.role === "ADMIN" ? admin?.adminImage : null),
+                  },
+                  lastMessage: latestMessage?.message
+                    ? latestMessage.message
+                    : latestMessage
+                    ? "Sent an image"
+                    : "No messages yet",
+                  time: latestMessage?.createdAt || room.updatedAt,
+                  unreadCount: 0, // extend later with real unread logic
                 };
               });
 
-              // Send the result back to the requesting client
+              // Send response back to client
               ws.send(
                 JSON.stringify({
                   event: "messageList",
-                  data: userWithLastMessages,
+                  success: true,
+                  message: "Inbox preview fetched successfully",
+                  data: inboxData,
                 })
               );
             } catch (error) {
-              console.error(
-                "Error fetching user list with last messages:",
-                error
-              );
+              console.error("Error fetching inbox preview:", error);
               ws.send(
                 JSON.stringify({
                   event: "error",
-                  message: "Failed to fetch users with last messages",
+                  success: false,
+                  message: "Failed to fetch inbox preview",
                 })
               );
             }

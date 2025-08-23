@@ -87,7 +87,7 @@ const getInboxPreview = async (userId: string) => {
     },
     include: {
       chat: {
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" }, // latest message first
         take: 1,
       },
       sender: {
@@ -107,12 +107,12 @@ const getInboxPreview = async (userId: string) => {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { updatedAt: "desc" }, // sort inbox by activity
   });
 
   const admin = await prisma.adminProfile.findFirst({});
 
-  return rooms.map((room: any) => {
+  const inboxData = rooms.map((room: any) => {
     const otherUser = room.senderId === userId ? room.receiver : room.sender;
     const latestMessage = room.chat[0];
 
@@ -132,14 +132,23 @@ const getInboxPreview = async (userId: string) => {
           otherUser?.BrandInfo?.logoImage ||
           (otherUser.role === "ADMIN" ? admin?.adminImage : null),
       },
-      lastMessage: latestMessage.message
+      lastMessage: latestMessage?.message
         ? latestMessage.message
-        : "Sent an image",
+        : latestMessage
+        ? "Sent an image"
+        : "No messages yet",
       time: latestMessage?.createdAt || room.updatedAt,
-      unreadCount: 0,
+      unreadCount: 0, // extend with actual unread logic later
     };
   });
+
+  return {
+    success: true,
+    message: "Inbox preview fetched successfully",
+    data: inboxData,
+  };
 };
+
 
 const getOnlineUsers = async (userIds: string[]) => {
   const onlineUsers = await prisma.user.findMany({
