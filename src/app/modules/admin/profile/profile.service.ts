@@ -22,8 +22,8 @@ const updateProfile = async (data: any, files: any, id: string) => {
 
   const { email, password } = admin;
 
-  if (data.newPassword) {
-    const isPasswordCorrect = await bcrypt.compare(data.newPassword, password);
+  if (data.currentPassword) {
+    const isPasswordCorrect = await bcrypt.compare(data.currentPassword, password);
     if (!isPasswordCorrect)
       throw new ApiError(StatusCodes.UNAUTHORIZED, "Invalid password");
   }
