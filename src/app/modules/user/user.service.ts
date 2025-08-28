@@ -28,6 +28,7 @@ const createUserIntoDB = async (payload: User) => {
     data: {
       ...payload,
       password: newPass,
+      profileRole:"INDIVIDUAL"
     },
     select: {
       id: true,
