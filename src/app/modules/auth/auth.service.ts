@@ -122,7 +122,6 @@ const resendOtp = async (payload: { email: string }) => {
 const socialLogin = async (payload: {
   email: string;
   name: string;
-  role: Role;
   image?: string;
 }) => {
   const userData = await prisma.user.findUnique({
@@ -154,8 +153,10 @@ const socialLogin = async (payload: {
     const result = await prisma.user.create({
       data: {
         ...payload,
+        role: Role.USER,
         password: "",
         status: "ACTIVE",
+        profileRole: "INDIVIDUAL",
       },
       select: {
         id: true,
