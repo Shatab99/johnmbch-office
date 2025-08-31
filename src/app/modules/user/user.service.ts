@@ -28,7 +28,7 @@ const createUserIntoDB = async (payload: User) => {
     data: {
       ...payload,
       password: newPass,
-      profileRole:"INDIVIDUAL"
+      profileRole: "INDIVIDUAL",
     },
     select: {
       id: true,
@@ -358,14 +358,56 @@ const getMyProfile = async (id: string) => {
         : false,
   };
 
+  let isProfileUpdated = false; // default value
+
+  if (result.profileRole === "ATHLETE") {
+    isProfileUpdated = !!(
+      result.AthleteInfo?.fullName &&
+      result.AthleteInfo?.profileImage &&
+      result.AthleteInfo?.sportName &&
+      result.AthleteInfo?.bio &&
+      result.AthleteInfo?.country &&
+      result.AthleteInfo?.city &&
+      result.AthleteInfo?.passportOrNidImg &&
+      result.AthleteInfo?.selfieImage
+    );
+  } else if (result.profileRole === "CLUB") {
+    isProfileUpdated = !!(
+      result.ClubInfo?.clubName &&
+      result.ClubInfo?.logoImage &&
+      result.ClubInfo?.sportName &&
+      result.ClubInfo?.bio &&
+      result.ClubInfo?.country &&
+      result.ClubInfo?.city &&
+      result.ClubInfo?.licenseImage &&
+      result.ClubInfo?.certificateImage
+    );
+  } else if (result.profileRole === "BRAND") {
+    isProfileUpdated = !!(
+      result.BrandInfo?.brandName &&
+      result.BrandInfo?.logoImage &&
+      result.BrandInfo?.country &&
+      result.BrandInfo?.city
+    );
+  } else if (result.profileRole === "INDIVIDUAL") {
+    isProfileUpdated = !!(
+      result.IndividualInfo?.fullName &&
+      result.IndividualInfo?.profileImage &&
+      result.IndividualInfo?.country &&
+      result.IndividualInfo?.city
+    );
+  }
+
+  // Now isProfileUpdated is always defined
   const shapedResult = {
     id: result.id,
     email: result.email,
     role: result.role,
     profileRole: result.profileRole,
-    isProfileUpdated: result.profileRole ? true : false,
+    isProfileUpdated,
     profile,
   };
+
   const account = await stripe.accounts.retrieve("acct_1Rx46aLQN1zAXncI");
 
   console.log(account.capabilities);
@@ -410,8 +452,6 @@ const updateCoverImage = async (userId: string, coverImageUrl: string) => {
 
   return "Cover image updated successfully";
 };
-
-
 
 export const userServices = {
   createUserIntoDB,
