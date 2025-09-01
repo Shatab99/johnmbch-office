@@ -374,12 +374,15 @@ const joinTier = async (userId: string, body: any, files: any) => {
     subscriptionId: subscription.id,
   };
 };
-const splitPaymentFromStripe = async (payload: {
-  amount: number;
-  paymentMethodId: string;
-  providerId: string;
-  paymentMethod?: string;
-}) => {
+const splitPaymentFromStripe = async (
+  payload: {
+    amount: number;
+    paymentMethodId: string;
+    providerId: string;
+    paymentMethod?: string;
+  },
+  customerId: string
+) => {
   const finderUser = await prisma.user.findUnique({
     where: { id: payload.providerId },
   });
@@ -390,11 +393,17 @@ const splitPaymentFromStripe = async (payload: {
       "This user is not connected to Stripe !"
     );
   }
+  // 2️⃣ Attach payment method to customer
+  await stripe.paymentMethods.attach(payload.paymentMethodId, {
+    customer: customerId,
+  });
+
   const payment = await stripe.paymentIntents.create({
     amount: Math.round(payload.amount * 100),
     currency: payload?.paymentMethod || "usd",
     payment_method: payload.paymentMethodId,
     confirm: true,
+    customer: customerId,
     payment_method_types: ["card"], // 🔥 Important: to avoid auto-redirects or default behavior
     application_fee_amount: Math.round(payload.amount * 0.1 * 100), // $7 in cents , 10% here
     transfer_data: {
@@ -402,7 +411,7 @@ const splitPaymentFromStripe = async (payload: {
     },
   });
 
-  console.log(payment)
+  console.log(payment);
 
   if (payment.status !== "succeeded") {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Payment failed!");
@@ -442,7 +451,7 @@ const quickSupport = async (
   if (!clubORAthleteUser)
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
 
-  const result = await splitPaymentFromStripe(paymentdata);
+  const result = await splitPaymentFromStripe(paymentdata, user?.customerId!);
 
   // donor notifications
   await notificationServices.sendSingleNotification(providerId, userId, {
