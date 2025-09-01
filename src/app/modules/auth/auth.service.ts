@@ -31,12 +31,13 @@ const logInFromDB = async (payload: {
     );
   }
 
-  if (findUser.status === "HIDE" && !findUser.isVerified) {
+  if (!findUser.isVerified) {
     OTPFn(findUser.email);
     throw new ApiError(
       401,
       "Please check your email address to verify your account"
     );
+    
   }
 
   if (payload.fcmToken) {

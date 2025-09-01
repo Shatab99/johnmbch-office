@@ -365,12 +365,13 @@ const getMyProfile = async (id: string) => {
     role: result.role,
     profileRole: result.profileRole,
     isProfileUpdated: result.isProfileUpdated,
+    isStripeConnected: !!result.connectAccountId,
     profile,
   };
 
-  const account = await stripe.accounts.retrieve("acct_1Rx46aLQN1zAXncI");
+  // const account = await stripe.accounts.retrieve("acct_1Rx46aLQN1zAXncI");
 
-  console.log(account.capabilities);
+  // console.log(account.capabilities);
 
   return shapedResult;
 };
