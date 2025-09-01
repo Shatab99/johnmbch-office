@@ -115,7 +115,7 @@ const updateAtheleteProfile = async (id: string, body: any, image: any) => {
 
   await prisma.user.update({
     where: { id },
-    data: { profileRole: "ATHLETE" },
+    data: { profileRole: "ATHLETE", isProfileUpdated: true },
   });
 
   const result = await prisma.athleteInfo.update({
@@ -152,7 +152,7 @@ const updateClubProfile = async (id: string, body: any, image: any) => {
   }
   await prisma.user.update({
     where: { id },
-    data: { profileRole: "CLUB" },
+    data: { profileRole: "CLUB", isProfileUpdated: true },
   });
   const result = await prisma.clubInfo.update({
     where: {
@@ -188,7 +188,7 @@ const updateBrandProfile = async (id: string, body: any, image: any) => {
   }
   await prisma.user.update({
     where: { id },
-    data: { profileRole: "BRAND" },
+    data: { profileRole: "BRAND", isProfileUpdated: true },
   });
   const result = await prisma.brandInfo.update({
     where: {
@@ -213,7 +213,7 @@ const updateIndividualProfile = async (id: string, body: any, image: any) => {
 
   await prisma.user.update({
     where: { id },
-    data: { profileRole: "INDIVIDUAL" },
+    data: { profileRole: "INDIVIDUAL", isProfileUpdated: true },
   });
 
   const result = await prisma.individualInfo.update({
@@ -358,53 +358,13 @@ const getMyProfile = async (id: string) => {
         : false,
   };
 
-  let isProfileUpdated = false; // default value
-
-  if (result.profileRole === "ATHLETE") {
-    isProfileUpdated = !!(
-      result.AthleteInfo?.fullName &&
-      result.AthleteInfo?.profileImage &&
-      result.AthleteInfo?.sportName &&
-      result.AthleteInfo?.bio &&
-      result.AthleteInfo?.country &&
-      result.AthleteInfo?.city &&
-      result.AthleteInfo?.passportOrNidImg &&
-      result.AthleteInfo?.selfieImage
-    );
-  } else if (result.profileRole === "CLUB") {
-    isProfileUpdated = !!(
-      result.ClubInfo?.clubName &&
-      result.ClubInfo?.logoImage &&
-      result.ClubInfo?.sportName &&
-      result.ClubInfo?.bio &&
-      result.ClubInfo?.country &&
-      result.ClubInfo?.city &&
-      result.ClubInfo?.licenseImage &&
-      result.ClubInfo?.certificateImage
-    );
-  } else if (result.profileRole === "BRAND") {
-    isProfileUpdated = !!(
-      result.BrandInfo?.brandName &&
-      result.BrandInfo?.logoImage &&
-      result.BrandInfo?.country &&
-      result.BrandInfo?.city
-    );
-  } else if (result.profileRole === "INDIVIDUAL") {
-    isProfileUpdated = !!(
-      result.IndividualInfo?.fullName &&
-      result.IndividualInfo?.profileImage &&
-      result.IndividualInfo?.country &&
-      result.IndividualInfo?.city
-    );
-  }
-
   // Now isProfileUpdated is always defined
   const shapedResult = {
     id: result.id,
     email: result.email,
     role: result.role,
     profileRole: result.profileRole,
-    isProfileUpdated,
+    isProfileUpdated: result.isProfileUpdated,
     profile,
   };
 
