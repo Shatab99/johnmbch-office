@@ -7,6 +7,7 @@ import OTPVerify from "../../helper/OTPVerify";
 import { prisma } from "../../../utils/prisma";
 import { createStripeConnectAccount } from "../../helper/createStripeConnectAccount";
 import { stripe } from "../../../config/stripe";
+import { createStripeCustomerAcc } from "../../helper/createStripeCustomerAcc";
 
 const createUserIntoDB = async (payload: User) => {
   const findUser = await prisma.user.findUnique({
@@ -67,6 +68,8 @@ const createUserIntoDB = async (payload: User) => {
   });
 
   OTPFn(payload.email);
+
+  await createStripeCustomerAcc(result);
   return result;
 };
 

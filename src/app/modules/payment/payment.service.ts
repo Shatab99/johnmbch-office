@@ -402,6 +402,8 @@ const splitPaymentFromStripe = async (payload: {
     },
   });
 
+  console.log(payment)
+
   if (payment.status !== "succeeded") {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Payment failed!");
   }
@@ -440,7 +442,7 @@ const quickSupport = async (
   if (!clubORAthleteUser)
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found!");
 
-  await splitPaymentFromStripe(paymentdata);
+  const result = await splitPaymentFromStripe(paymentdata);
 
   // donor notifications
   await notificationServices.sendSingleNotification(providerId, userId, {
@@ -504,6 +506,14 @@ const quickSupport = async (
       updatedAt: new Date(),
     },
   });
+
+  console.error(result);
+  return {
+    amount,
+    providerId,
+    paymentMethodId,
+    userId,
+  };
 };
 
 const cancelSubscription = async (userId: string, recipientId: string) => {
