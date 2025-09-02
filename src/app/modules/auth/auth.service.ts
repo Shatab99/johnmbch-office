@@ -37,7 +37,6 @@ const logInFromDB = async (payload: {
       401,
       "Please check your email address to verify your account"
     );
-    
   }
 
   if (payload.fcmToken) {
@@ -157,6 +156,7 @@ const socialLogin = async (payload: {
         role: Role.USER,
         password: "",
         status: "ACTIVE",
+        isVerified: true,
         profileRole: "INDIVIDUAL",
       },
       select: {
