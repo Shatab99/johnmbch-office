@@ -28,7 +28,7 @@ model User {
   isVerified       Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
-  isProfileUpdated  Boolean      @default(false)
+  isProfileUpdated Boolean      @default(false)
 
   athleteInfoId String?      @db.ObjectId
   AthleteInfo   AthleteInfo? @relation(fields: [athleteInfoId], references: [id])
@@ -71,6 +71,12 @@ model AthleteInfo {
   city             String?
   passportOrNidImg String?
   selfieImage      String?
+  age              String?
+  location         String?
+  division         String?
+  league           String?
+  mission          String?
+  state            String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   User             User[]
