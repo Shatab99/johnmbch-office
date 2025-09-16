@@ -438,97 +438,121 @@ const getProfileDetailsFromDb = async (
     isOwner:
       userIdFromToken === athleteInfo?.userId ||
       userIdFromToken === clubInfo?.userId,
+    sponsorsIds:
+      user.profileRole === "CLUB"
+        ? clubInfo?.sponsorsIds
+        : user.profileRole === "ATHLETE"
+        ? athleteInfo?.sponsorsIds
+        : [],
   };
 
-  const result = posts.data.map((post: any) => {
-    const {
-      id,
-      AthleteInfo,
-      ClubInfo,
-      userDetails,
-      athleteInfoId,
-      clubInfoId,
-      brandInfoId,
-      BrandInfo,
-      IndividualInfo,
-      individualId,
-      likes,
-      isSponsored,
-      ...restPostData
-    } = post;
+  const userFromToken = await prisma.user.findUnique({
+    where: { id: userIdFromToken },
+  });
 
-    const profileData =
-      userDetails.profileRole === "ATHLETE"
-        ? {
-            userId: userDetails.id,
-            profileId: AthleteInfo?.id,
-            name: AthleteInfo?.fullName,
-            profileImage: AthleteInfo?.profileImage,
-            sportName: AthleteInfo?.sportName,
-          }
-        : {
-            userId: userDetails.id,
-            profileId: ClubInfo?.id,
-            name: ClubInfo?.clubName,
-            profileImage: ClubInfo?.logoImage,
-            sportName: ClubInfo?.sportName,
-          };
+  if (!userFromToken)
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
 
-    const likesData = likes.map((like: any) => {
+  let isSubscribed: boolean =
+    profile?.sponsorsIds?.includes(userIdFromToken) ?? false;
+
+  const result = posts.data
+    .map((post: any) => {
       const {
         id,
-        userId,
-        postId,
-        User: { profileRole, AthleteInfo, ClubInfo, BrandInfo, IndividualInfo },
-      } = like;
+        AthleteInfo,
+        ClubInfo,
+        userDetails,
+        athleteInfoId,
+        clubInfoId,
+        brandInfoId,
+        BrandInfo,
+        IndividualInfo,
+        individualId,
+        likes,
+        isSponsored,
+        ...restPostData
+      } = post;
 
       const profileData =
-        profileRole === "ATHLETE"
+        userDetails.profileRole === "ATHLETE"
           ? {
+              userId: userDetails.id,
               profileId: AthleteInfo?.id,
               name: AthleteInfo?.fullName,
               profileImage: AthleteInfo?.profileImage,
               sportName: AthleteInfo?.sportName,
             }
-          : profileRole === "CLUB"
-          ? {
+          : {
+              userId: userDetails.id,
               profileId: ClubInfo?.id,
               name: ClubInfo?.clubName,
               profileImage: ClubInfo?.logoImage,
               sportName: ClubInfo?.sportName,
-            }
-          : profileRole === "BRAND"
-          ? {
-              profileId: BrandInfo?.id,
-              name: BrandInfo?.brandName,
-              profileImage: BrandInfo?.logoImage,
-              sportName: BrandInfo?.sportName,
-            }
-          : {
-              profileId: IndividualInfo?.id,
-              name: IndividualInfo?.fullName,
-              profileImage: IndividualInfo?.profileImage,
-              sportName: "Supporter",
             };
 
+      const likesData = likes.map((like: any) => {
+        const {
+          id,
+          userId,
+          postId,
+          User: {
+            profileRole,
+            AthleteInfo,
+            ClubInfo,
+            BrandInfo,
+            IndividualInfo,
+          },
+        } = like;
+
+        const profileData =
+          profileRole === "ATHLETE"
+            ? {
+                profileId: AthleteInfo?.id,
+                name: AthleteInfo?.fullName,
+                profileImage: AthleteInfo?.profileImage,
+                sportName: AthleteInfo?.sportName,
+              }
+            : profileRole === "CLUB"
+            ? {
+                profileId: ClubInfo?.id,
+                name: ClubInfo?.clubName,
+                profileImage: ClubInfo?.logoImage,
+                sportName: ClubInfo?.sportName,
+              }
+            : profileRole === "BRAND"
+            ? {
+                profileId: BrandInfo?.id,
+                name: BrandInfo?.brandName,
+                profileImage: BrandInfo?.logoImage,
+                sportName: BrandInfo?.sportName,
+              }
+            : {
+                profileId: IndividualInfo?.id,
+                name: IndividualInfo?.fullName,
+                profileImage: IndividualInfo?.profileImage,
+                sportName: "Supporter",
+              };
+
+        return {
+          likeId: id,
+          userId,
+          postId,
+          profileInfo: profileData,
+        };
+      });
+
+      const isLiked = likesData.some(
+        (like: any) => like.userId === userIdFromToken
+      );
+
       return {
-        likeId: id,
-        userId,
-        postId,
-        profileInfo: profileData,
+        profile: profileData,
+        postData: { postId: post.id, ...restPostData, likes: likesData },
+        isLiked,
       };
-    });
-
-    const isLiked = likesData.some(
-      (like: any) => like.userId === userIdFromToken
-    );
-
-    return {
-      profile: profileData,
-      postData: { postId: post.id, ...restPostData, likes: likesData },
-      isLiked,
-    };
-  });
+    })
+    .slice(0, isSubscribed ? undefined : 3);
 
   const sponsoredPosts = sponsoredPostdata.data.map((post: any) => {
     const {

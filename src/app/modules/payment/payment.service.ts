@@ -286,15 +286,6 @@ const joinTier = async (userId: string, body: any, files: any) => {
     },
   });
 
-  // //create room for chat
-
-  // await prisma.room.create({
-  //   data: {
-  //     senderId: userId,
-  //     receiverId: providerId,
-  //   },
-  // });
-
   // Make a transaction history
 
   await prisma.transactions.create({
@@ -336,6 +327,26 @@ const joinTier = async (userId: string, body: any, files: any) => {
       tier.type === "BRAND" ? "Sponsorship" : "Support"
     } Tier with $${tier.amount}/month.`,
   });
+
+  // update the sponsorsIds array of the provider
+
+  provider.profileRole === "ATHLETE"
+    ? await prisma.athleteInfo.update({
+        where: { userId: providerId },
+        data: {
+          sponsorsIds: {
+            push: userId,
+          },
+        },
+      })
+    : await prisma.clubInfo.update({
+        where: { userId: providerId },
+        data: {
+          sponsorsIds: {
+            push: userId,
+          },
+        },
+      });
 
   // Admin notifications
 
