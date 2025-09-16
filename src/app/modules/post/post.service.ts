@@ -636,6 +636,7 @@ const getProfileDetailsFromDb = async (
         };
 
     return {
+      isSubscribed,
       profile: brandProfile,
       postData: { postId: post.id, ...restPostData, likes: likesData },
       isLiked,
