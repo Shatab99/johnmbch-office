@@ -636,14 +636,19 @@ const getProfileDetailsFromDb = async (
         };
 
     return {
-      isSubscribed,
       profile: brandProfile,
       postData: { postId: post.id, ...restPostData, likes: likesData },
       isLiked,
     };
   });
 
-  return { profile, metaData: posts.meta, posts: result, sponsoredPosts };
+  return {
+    showSeeMoreButton: !isSubscribed,
+    profile,
+    metaData: posts.meta,
+    posts: result,
+    sponsoredPosts,
+  };
 };
 
 // const getMyPosts
